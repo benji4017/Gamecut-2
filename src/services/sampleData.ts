@@ -4,37 +4,37 @@ export const REAL_MATCH_VIDEO_URL = '/sample_pro_match.mp4';
 
 export const SAMPLE_BRANDING: ClubBranding = {
   p1Club: {
-    name: 'China Olympic Team · Grand Slam',
-    badgeEmoji: '🇨🇳',
-    brand: 'DHS',
-    primaryColor: '#EF4444',
+    name: 'Player 1',
+    badgeEmoji: '🏓',
+    brand: 'Custom',
+    primaryColor: '#00F5D4',
   },
   p2Club: {
-    name: 'Korea Olympic Team · Gold Medalist',
-    badgeEmoji: '🇰🇷',
-    brand: 'Xiom',
+    name: 'Player 2',
+    badgeEmoji: '🏓',
+    brand: 'Custom',
     primaryColor: '#3B82F6',
   },
-  eventTitle: "LONDON 2012 OLYMPIC GAMES · MEN'S TABLE TENNIS TEAM FINALS",
-  tournamentSponsor: 'INTERNATIONAL TABLE TENNIS FEDERATION (ITTF) & IOC',
+  eventTitle: 'Match Highlights',
+  tournamentSponsor: 'RallyCut AI Video Engine',
 };
 
 export const SAMPLE_PLAYERS: { p1: PlayerInfo; p2: PlayerInfo } = {
   p1: {
     id: 1,
-    name: 'Ma Long',
-    club: 'China Olympic Team (Double Grand Slam Legend)',
-    blade: 'DHS Hurricane Long 5 (Hurricane 3 Neo National)',
-    style: 'Offensive (Loop)',
-    color: '#EF4444', // China Olympic Red
+    name: 'Player 1',
+    club: 'Table Tennis Club',
+    blade: 'Custom Blade',
+    style: 'Offensive (Loop / Attack)',
+    color: '#00F5D4',
   },
   p2: {
     id: 2,
-    name: 'Ryu Seung-min',
-    club: 'South Korea Olympic Team (2004 Olympic Gold Medalist)',
-    blade: 'Butterfly Cypress-S (Tenergy 05 / Penhold)',
+    name: 'Player 2',
+    club: 'Table Tennis Club',
+    blade: 'Custom Blade',
     style: 'Close-table Attacker',
-    color: '#3B82F6', // Korea Olympic Blue
+    color: '#3B82F6',
   },
 };
 
@@ -72,7 +72,7 @@ export const SAMPLE_RALLIES_DURBAN: RallyInterval[] = [
     gamesWonP1: 0,
     gamesWonP2: 0,
     excluded: false,
-    notes: 'Ma Long pendular spin serve followed by aggressive 3rd-ball forehand loop winner down the line.',
+    notes: 'Point #1: Quick spin serve followed by aggressive winner down the line.',
   },
   {
     id: 'rally_02',
@@ -91,7 +91,7 @@ export const SAMPLE_RALLIES_DURBAN: RallyInterval[] = [
     gamesWonP1: 0,
     gamesWonP2: 0,
     excluded: false,
-    notes: 'Deep backhand underspin push countered with lightning forehand topspin drive across the table.',
+    notes: 'Point #2: Fast cross-table exchange and winner.',
   },
   {
     id: 'rally_03',
@@ -110,7 +110,7 @@ export const SAMPLE_RALLIES_DURBAN: RallyInterval[] = [
     gamesWonP1: 0,
     gamesWonP2: 0,
     excluded: false,
-    notes: 'Penhold topspin loop into the wide backhand corner for a clean winner.',
+    notes: 'Point #3: Topspin exchange into the wide corner for a winner.',
   },
 ];
 
@@ -507,8 +507,8 @@ export function drawArenaFrame(
   h: number,
   timeSecs: number,
   rally?: RallyInterval | null,
-  p1Name = 'Ma Long',
-  p2Name = 'Fan Zhendong',
+  p1Name = 'Player 1',
+  p2Name = 'Player 2',
 ) {
   // Arena floor: ITTF Red Taraflex
   const grad = ctx.createLinearGradient(0, 0, 0, h);

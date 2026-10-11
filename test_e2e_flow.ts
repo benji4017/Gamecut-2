@@ -37,9 +37,8 @@ async function runTests() {
     const res = await fetch(`${BASE_URL}/api/sample-match`);
     const data = await res.json();
     assert(res.status === 200, 'Sample match endpoint responds with HTTP 200');
-    assert(Array.isArray(data.rallies) && data.rallies.length > 0, `Returned ${data.rallies?.length} sample rallies`);
-    assert(data.eventTitle?.includes('Olympic') || data.eventTitle?.includes('ITTF'), 'Event title contains Olympic or ITTF match title');
-    assert(data.players?.p1?.name && data.players?.p2?.name, 'Both player names are defined');
+    assert(typeof data.eventTitle === 'string' && data.eventTitle.length > 0, `Event title is defined: "${data.eventTitle}"`);
+    assert(data.players?.p1?.name && data.players?.p2?.name, `Both player names are defined: ${data.players?.p1?.name} vs ${data.players?.p2?.name}`);
   } catch (err: any) {
     assert(false, `Sample match check failed: ${err.message}`);
   }

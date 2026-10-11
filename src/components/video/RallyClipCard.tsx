@@ -79,7 +79,7 @@ export const RallyClipCard: React.FC<RallyClipCardProps> = ({
             <button
               onClick={() => triggerReplay(rally.id)}
               className="w-7 h-7 rounded-lg bg-orange-500/15 hover:bg-orange-500 text-orange-400 hover:text-slate-950 border border-orange-500/30 flex items-center justify-center transition-all group"
-              title="Spotlight Slow-Mo Replay"
+              title="Replay Point"
             >
               <RotateCcw className="w-3.5 h-3.5 group-hover:-rotate-45 transition-transform" />
             </button>
@@ -151,55 +151,39 @@ export const RallyClipCard: React.FC<RallyClipCardProps> = ({
         </div>
       </div>
 
-      {/* Main Controls Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/80 text-xs">
+      {/* Main Controls Grid (Winner & Fine-Tune Trimming) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80 text-xs">
         {/* Column 1: Winner & Server */}
         <div className="space-y-1.5">
           <div className="text-[11px] text-slate-400 font-mono flex items-center justify-between">
             <span>Point Winner:</span>
             <span className="text-slate-500 text-[10px]">Server: {rally.server === 1 ? player1.name : player2.name}</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => overrideRallyWinner(rally.id, 1)}
-              className={`flex-1 py-1 px-2 rounded-lg font-semibold text-center border transition-all ${
+              className={`flex-1 py-1.5 px-2.5 rounded-lg font-semibold text-center border transition-all ${
                 rally.winner === 1
                   ? 'bg-[#00F5D4]/20 border-[#00F5D4] text-[#00F5D4] shadow-sm'
                   : 'bg-slate-800/60 border-slate-700/80 text-slate-400 hover:text-slate-200'
               }`}
             >
-              {player1.name.split(' ')[0]} {rally.winner === 1 && '✓'}
+              {player1.name.toLowerCase().startsWith('player') ? player1.name : player1.name.split(' ')[0]} {rally.winner === 1 && '✓'}
             </button>
             <button
               onClick={() => overrideRallyWinner(rally.id, 2)}
-              className={`flex-1 py-1 px-2 rounded-lg font-semibold text-center border transition-all ${
+              className={`flex-1 py-1.5 px-2.5 rounded-lg font-semibold text-center border transition-all ${
                 rally.winner === 2
                   ? 'bg-[#3B82F6]/20 border-[#3B82F6] text-[#3B82F6] shadow-sm'
                   : 'bg-slate-800/60 border-slate-700/80 text-slate-400 hover:text-slate-200'
               }`}
             >
-              {player2.name.split(' ')[0]} {rally.winner === 2 && '✓'}
+              {player2.name.toLowerCase().startsWith('player') ? player2.name : player2.name.split(' ')[0]} {rally.winner === 2 && '✓'}
             </button>
           </div>
         </div>
 
-        {/* Column 2: Stroke & Outcome */}
-        <div className="space-y-1.5">
-          <div className="text-[11px] text-slate-400 font-mono">Ending Stroke:</div>
-          <select
-            value={rally.endingStroke}
-            onChange={(e) => updateRally(rally.id, { endingStroke: e.target.value as EndingStroke })}
-            className="w-full py-1 px-2 rounded-lg bg-slate-800/90 border border-slate-700 text-slate-200 text-xs font-mono focus:outline-none focus:border-[#00F5D4]"
-          >
-            {STROKE_OPTIONS.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Column 3: Fine-Tune Trimming */}
+        {/* Column 2: Fine-Tune Trimming */}
         <div className="space-y-1.5">
           <div className="text-[11px] text-slate-400 font-mono flex items-center justify-between">
             <span>Trim Start:</span>

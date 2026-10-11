@@ -77,7 +77,7 @@ export const BroadcastScoreboard: React.FC<BroadcastScoreboardProps> = ({
         <div className="flex items-center gap-1.5">
           <span className="text-sm" title={branding.p1Club.name}>{branding.p1Club.badgeEmoji}</span>
           <span className="font-bold text-white max-w-[80px] sm:max-w-[100px] truncate">
-            {player1.name.split(' ')[0]}
+            {player1.name.toLowerCase().startsWith('player') ? player1.name : player1.name.split(' ')[0]}
           </span>
           {displayRally.server === 1 && (
             <span className="text-[10px]" title="Serving">🏓</span>
@@ -97,7 +97,7 @@ export const BroadcastScoreboard: React.FC<BroadcastScoreboardProps> = ({
             <span className="text-[10px]" title="Serving">🏓</span>
           )}
           <span className="font-bold text-slate-200 max-w-[80px] sm:max-w-[100px] truncate">
-            {player2.name.split(' ')[0]}
+            {player2.name.toLowerCase().startsWith('player') ? player2.name : player2.name.split(' ')[0]}
           </span>
           <span className="text-sm" title={branding.p2Club.name}>{branding.p2Club.badgeEmoji}</span>
         </div>

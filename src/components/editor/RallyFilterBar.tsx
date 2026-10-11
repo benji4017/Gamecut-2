@@ -26,16 +26,6 @@ export const RallyFilterBar: React.FC = () => {
       count: activeRallies.filter((r) => r.isGamePoint || r.isMatchPoint).length,
     },
     {
-      id: 'fh_loops',
-      label: 'Forehand Loops',
-      count: activeRallies.filter((r) => r.endingStroke === 'forehand_loop').length,
-    },
-    {
-      id: 'bh_loops',
-      label: 'Backhand Loops',
-      count: activeRallies.filter((r) => r.endingStroke === 'backhand_loop').length,
-    },
-    {
       id: 'winners',
       label: 'Winners Only',
       count: activeRallies.filter((r) => r.endingType === 'winner').length,

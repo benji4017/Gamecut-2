@@ -202,15 +202,31 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .catch(() => {});
   }, [geminiApiKey]);
 
-  const [player1, setPlayer1] = useState<PlayerInfo>(persisted.current?.player1 || SAMPLE_PLAYERS.p1);
-  const [player2, setPlayer2] = useState<PlayerInfo>(persisted.current?.player2 || SAMPLE_PLAYERS.p2);
+  const initialPlayer1: PlayerInfo = useMemo(() => {
+    const p = persisted.current?.player1;
+    if (!p || p.name === 'Ma Long' || p.name === 'Fan Zhendong' || p.name === 'Ryu Seung-min') {
+      return SAMPLE_PLAYERS.p1;
+    }
+    return p;
+  }, []);
+
+  const initialPlayer2: PlayerInfo = useMemo(() => {
+    const p = persisted.current?.player2;
+    if (!p || p.name === 'Ma Long' || p.name === 'Fan Zhendong' || p.name === 'Ryu Seung-min') {
+      return SAMPLE_PLAYERS.p2;
+    }
+    return p;
+  }, []);
+
+  const [player1, setPlayer1] = useState<PlayerInfo>(initialPlayer1);
+  const [player2, setPlayer2] = useState<PlayerInfo>(initialPlayer2);
   const [branding, setBranding] = useState<ClubBranding>(persisted.current?.branding || SAMPLE_BRANDING);
 
   const [replayState, setReplayState] = useState<ReplayState>({
     isActive: false,
     rallyId: null,
     slowMoSpeed: 0.35,
-    spotlightEnabled: true,
+    spotlightEnabled: false,
   });
 
   const [rawRallies, setRawRallies] = useState<RallyInterval[]>(persisted.current?.rawRallies || SAMPLE_RALLIES);
@@ -314,7 +330,7 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!isPlaying || playbackMode !== 'rallies_only' || filteredRallies.length === 0) return;
 
     const currentActive = filteredRallies.find(
-      (r) => currentTime >= r.startTime && currentTime < r.endTime - 0.1,
+      (r) => currentTime >= r.startTime && currentTime < r.endTime - 0.05,
     );
 
     if (!currentActive) {
@@ -582,6 +598,30 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setYoutubeUrl(null);
     const url = URL.createObjectURL(file);
     setVideoUrl(url);
+
+    // Explicitly set player names to Player 1 and Player 2 for every upload
+    setPlayer1({
+      id: 1,
+      name: 'Player 1',
+      club: 'Table Tennis Club',
+      blade: 'Custom Blade',
+      style: 'Offensive (Loop)',
+      color: '#00F5D4',
+    });
+    setPlayer2({
+      id: 2,
+      name: 'Player 2',
+      club: 'Table Tennis Club',
+      blade: 'Custom Blade',
+      style: 'Close-table Attacker',
+      color: '#3B82F6',
+    });
+    setBranding({
+      p1Club: { name: 'Player 1', badgeEmoji: '🏓', brand: 'Custom', primaryColor: '#00F5D4' },
+      p2Club: { name: 'Player 2', badgeEmoji: '🏓', brand: 'Custom', primaryColor: '#3B82F6' },
+      eventTitle: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'Match Highlights',
+      tournamentSponsor: 'RallyCut AI Video Engine',
+    });
 
     // Read duration from video
     const tempVideo = document.createElement('video');

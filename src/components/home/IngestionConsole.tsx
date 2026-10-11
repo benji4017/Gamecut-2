@@ -129,7 +129,7 @@ export const IngestionConsole: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-lg">🏓</span>
                 <h3 className="text-base font-bold text-white">
-                  Olympic Men's Singles Finals (Ma Long vs Fan Zhendong)
+                  Pro Match Highlights (Player 1 vs Player 2)
                 </h3>
               </div>
               <p className="text-xs text-slate-400 max-w-xl leading-relaxed">

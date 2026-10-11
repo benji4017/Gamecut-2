@@ -217,7 +217,7 @@ export const RallyGrid: React.FC<RallyGridProps> = ({
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-[#00F5D4]" />
-              <span>{player1.name.split(' ')[0]} Won</span>
+              <span>{player1.name.toLowerCase().startsWith('player') ? player1.name : player1.name.split(' ')[0]} Won</span>
               <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
                 selectedCategory === 'p1' ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-400'
               }`}>
@@ -235,7 +235,7 @@ export const RallyGrid: React.FC<RallyGridProps> = ({
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-blue-500" />
-              <span>{player2.name.split(' ')[0]} Won</span>
+              <span>{player2.name.toLowerCase().startsWith('player') ? player2.name : player2.name.split(' ')[0]} Won</span>
               <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
                 selectedCategory === 'p2' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
               }`}>

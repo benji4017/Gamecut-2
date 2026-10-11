@@ -302,18 +302,18 @@ app.get('/api/sample-match', (_req: Request, res: Response) => {
   const players = {
     p1: {
       id: 1,
-      name: 'Ma Long',
-      club: 'China Olympic Team (Double Grand Slam Legend)',
-      blade: 'DHS Hurricane Long 5 (Hurricane 3 Neo National)',
+      name: 'Player 1',
+      club: 'Table Tennis Club',
+      blade: 'Custom Blade',
       style: 'Offensive (Loop / Attack)',
-      color: '#EF4444',
+      color: '#00F5D4',
     },
     p2: {
       id: 2,
-      name: 'Ryu Seung-min',
-      club: 'South Korea Olympic Team (2004 Olympic Gold Medalist)',
-      blade: 'Butterfly Cypress-S (Tenergy 05 / Penhold)',
-      style: 'Offensive (Traditional Penhold Single-Sided Loop)',
+      name: 'Player 2',
+      club: 'Table Tennis Club',
+      blade: 'Custom Blade',
+      style: 'Close-table Attacker',
       color: '#3B82F6',
     },
   };
@@ -336,7 +336,7 @@ app.get('/api/sample-match', (_req: Request, res: Response) => {
       gamesWonP1: 0,
       gamesWonP2: 0,
       excluded: false,
-      notes: 'Ma Long pendular spin serve followed by aggressive 3rd-ball forehand loop winner down the line.',
+      notes: 'Point #1: Quick spin serve followed by aggressive winner down the line.',
     },
     {
       id: 'rally_02',
@@ -355,7 +355,7 @@ app.get('/api/sample-match', (_req: Request, res: Response) => {
       gamesWonP1: 0,
       gamesWonP2: 0,
       excluded: false,
-      notes: 'Deep backhand underspin push countered with lightning forehand topspin drive across the table.',
+      notes: 'Point #2: Fast cross-table exchange and winner.',
     },
     {
       id: 'rally_03',
@@ -374,15 +374,15 @@ app.get('/api/sample-match', (_req: Request, res: Response) => {
       gamesWonP1: 0,
       gamesWonP2: 0,
       excluded: false,
-      notes: 'Penhold topspin loop into the wide backhand corner for a clean winner.',
+      notes: 'Point #3: Topspin exchange into the wide corner for a winner.',
     },
   ];
 
   res.json({
     videoUrl: '/sample_pro_match.mp4',
-    eventTitle: "London 2012 Olympic Games - Men's Team Gold Medal Match",
+    eventTitle: 'Match Highlights',
     courtType: 'Official ITTF Olympic Blue Table on Red Taraflex flooring',
-    tournamentSponsor: 'INTERNATIONAL TABLE TENNIS FEDERATION (ITTF) & IOC',
+    tournamentSponsor: 'RallyCut AI Video Engine',
     players,
     ralliesCount: sampleRallies.length,
     sampleRallies,
@@ -395,16 +395,20 @@ const TABLE_TENNIS_ANALYSIS_PROMPT = `
 You are an expert Olympic Table Tennis (ITTF) video analyst and referee.
 Analyze this table tennis match recording and detect all in-play rallies, cutting out all dead time between points (ball retrieval, toweling off, waiting before serve).
 
-CRITICAL VISION REQUIREMENT:
+CRITICAL VISION & TIGHT CUT REQUIREMENT:
 DO NOT use audio or sound to detect if the ball is in play. Rely purely on visual multimodal recognition:
 - Visually identify the server's open-palm upward ball toss (start of rally).
 - Track the optical trajectory of the ball as it bounces on the server's side, crosses the net, and is returned.
 - Track paddle contact swings, footwork, and table surface bounces visually.
 - Visually identify the exact moment play ceases (ball bouncing twice, ball flying wide/long past table boundary, ball hitting net without crossing, or players lowering paddles).
 
+STRICT CUT TIMING (ZERO DEAD TIME):
+- TIGHT CUTOFF: end_time_seconds MUST BE the exact instant the ball is dead. DO NOT leave trailing dead time after the rally.
+- NO CELEBRATIONS OR WALKING: DO NOT include players walking around, fist-pumping, retrieving balls, or pausing before the next serve. Cut immediately when the point concludes.
+
 For each rally, strictly identify:
 1. start_time_seconds: The exact visual timestamp when the server tosses the ball from the open palm.
-2. end_time_seconds: The exact visual timestamp when the ball bounces twice, goes out, hits the net without crossing, or play is called dead.
+2. end_time_seconds: The exact visual timestamp when the ball bounces twice, goes out, hits the net without crossing, or play is called dead (cut immediately).
 3. shot_count: Total number of ball contacts during the rally (including serve, return, third ball, etc.).
 4. server: 1 for Near Court Player (P1) or 2 for Far Court Player (P2).
 5. winner: 1 or 2 for who scored the point.
@@ -623,7 +627,7 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
             gamesWonP1: 0,
             gamesWonP2: 0,
             excluded: false,
-            notes: 'Ma Long pendular spin serve followed by aggressive 3rd-ball forehand loop winner down the line.',
+            notes: 'Point #1: Quick spin serve followed by aggressive winner down the line.',
           },
           {
             id: 'rally_02',
@@ -642,7 +646,7 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
             gamesWonP1: 0,
             gamesWonP2: 0,
             excluded: false,
-            notes: 'Deep backhand underspin push countered with lightning forehand topspin drive across the table.',
+            notes: 'Point #2: Fast cross-table exchange and winner.',
           },
           {
             id: 'rally_03',
@@ -661,7 +665,7 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
             gamesWonP1: 0,
             gamesWonP2: 0,
             excluded: false,
-            notes: 'Penhold topspin loop into the wide backhand corner for a clean winner.',
+            notes: 'Point #3: Topspin exchange into the wide corner for a winner.',
           },
         ];
       } else {
@@ -704,7 +708,7 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
             gamesWonP1: 0,
             gamesWonP2: 0,
             excluded: false,
-            notes: `Rally #${rallyIdx}: Fast-paced ${stroke.replace('_', ' ')} exchange (${rStart}s - ${rEnd}s).`,
+            notes: `Rally #${rallyIdx} (${rStart}s - ${rEnd}s).`,
           });
 
           // Add dead time (10 to 18 seconds of towel break, ball collection)
@@ -796,17 +800,17 @@ app.post('/api/youtube/analyze', async (req: Request, res: Response) => {
       let detectedRallies: any[] = [];
       const detectedP1 = {
         id: 1,
-        name: 'Fan Zhendong',
-        club: 'World No. 1 / 2023 World Champion',
-        blade: 'Stiga Custom Carbon · Dignics 09c',
+        name: 'Player 1',
+        club: 'Table Tennis Club',
+        blade: 'Custom Blade',
         style: 'Offensive (Loop)' as const,
         color: '#00F5D4',
       };
       const detectedP2 = {
         id: 2,
-        name: 'Ma Long',
-        club: 'Double Grand Slam Champion · 3x World Champion',
-        blade: 'DHS Hurricane Long 5 · Hurricane 3 Neo',
+        name: 'Player 2',
+        club: 'Table Tennis Club',
+        blade: 'Custom Blade',
         style: 'Offensive (Loop)' as const,
         color: '#3B82F6',
       };

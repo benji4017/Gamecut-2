@@ -258,7 +258,7 @@ export const MatchAnalyticsDashboard: React.FC = () => {
                     </span>
                   </div>
                   <span className="text-[11px] text-slate-400">
-                    Won by {g.winner === 1 ? player1.name.split(' ')[0] : player2.name.split(' ')[0]}
+                    Won by {g.winner === 1 ? (player1.name.toLowerCase().startsWith('player') ? player1.name : player1.name.split(' ')[0]) : (player2.name.toLowerCase().startsWith('player') ? player2.name : player2.name.split(' ')[0])}
                   </span>
                 </div>
               ))}

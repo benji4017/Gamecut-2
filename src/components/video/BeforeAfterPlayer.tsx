@@ -67,17 +67,49 @@ export const BeforeAfterPlayer: React.FC = () => {
     }
   }, [isPlaying, playbackSpeed]);
 
-  // Sync HTML5 video currentTime
+  // Sync HTML5 video currentTime when changed externally (seek / trim)
   useEffect(() => {
     if (!videoRef.current) return;
-    if (Math.abs(videoRef.current.currentTime - currentTime) > 0.4) {
+    if (Math.abs(videoRef.current.currentTime - currentTime) > 0.15) {
       videoRef.current.currentTime = currentTime;
     }
   }, [currentTime]);
 
+  // Frame-accurate highlight cutting loop: zero lag, cuts instantly at rally end
+  useEffect(() => {
+    if (!isPlaying || playbackMode !== 'rallies_only' || filteredRallies.length === 0) return;
+
+    let animId: number;
+
+    const checkRallyBoundary = () => {
+      const vid = videoRef.current;
+      if (vid && !vid.paused) {
+        const t = vid.currentTime;
+
+        // Active rally check with tight cut (cut immediately as rally completes)
+        const currentRally = filteredRallies.find(
+          (r) => t >= r.startTime && t < r.endTime - 0.05,
+        );
+
+        if (!currentRally) {
+          // Rally has finished or currently in dead time - jump immediately to next rally!
+          const nextRally = filteredRallies.find((r) => r.startTime > t) || filteredRallies[0];
+          if (nextRally) {
+            vid.currentTime = nextRally.startTime;
+            setCurrentTime(nextRally.startTime);
+          }
+        }
+      }
+      animId = requestAnimationFrame(checkRallyBoundary);
+    };
+
+    animId = requestAnimationFrame(checkRallyBoundary);
+    return () => cancelAnimationFrame(animId);
+  }, [isPlaying, playbackMode, filteredRallies, setCurrentTime]);
+
   // Auto-exit replay when current point completes
   useEffect(() => {
-    if (replayState.isActive && activeRally && currentTime >= activeRally.endTime - 0.1) {
+    if (replayState.isActive && activeRally && currentTime >= activeRally.endTime - 0.05) {
       exitReplay();
     }
   }, [replayState.isActive, activeRally, currentTime, exitReplay]);
@@ -86,7 +118,7 @@ export const BeforeAfterPlayer: React.FC = () => {
   useEffect(() => {
     if (activeRally) {
       setPointAlert(
-        `${activeRally.winner === 1 ? player1.name : player2.name} · ${activeRally.endingStroke.replace('_', ' ').toUpperCase()} (${activeRally.endingType.toUpperCase()})`,
+        `${activeRally.winner === 1 ? player1.name : player2.name} · Point #${activeRally.index}`,
       );
     }
   }, [activeRally, player1.name, player2.name]);
@@ -154,24 +186,11 @@ export const BeforeAfterPlayer: React.FC = () => {
           />
         )}
 
-        {/* Slow-Motion Spotlight Freeze-Frame Overlay */}
+        {/* Replay Banner (no dark spotlight vignette or circular filter) */}
         {replayState.isActive && (
-          <div className="absolute inset-0 pointer-events-none z-20 transition-all duration-300">
-            {/* Darkened arena vignette with spotlight circle centered on table contact */}
-            <div
-              className="w-full h-full"
-              style={{
-                background:
-                  'radial-gradient(circle at 50% 55%, transparent 110px, rgba(0, 0, 0, 0.75) 230px)',
-              }}
-            />
-            {/* Glowing cyan focus spotlight ring */}
-            <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] rounded-full border-2 border-[#00F5D4] shadow-[0_0_35px_rgba(0,245,212,0.85)] animate-pulse" />
-            {/* Top-Right Replay Banner */}
-            <div className="absolute top-4 right-4 px-3.5 py-1.5 rounded-lg bg-orange-600/95 border border-white/20 text-white font-mono font-extrabold text-xs shadow-2xl flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-              <span>SLOW-MO SPOTLIGHT {replayState.slowMoSpeed}x</span>
-            </div>
+          <div className="absolute top-4 right-4 px-3.5 py-1.5 rounded-lg bg-orange-600/95 border border-white/20 text-white font-mono font-extrabold text-xs shadow-2xl flex items-center gap-2 pointer-events-none z-20">
+            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+            <span>SLOW-MO REPLAY {replayState.slowMoSpeed}x</span>
           </div>
         )}
 
@@ -192,7 +211,7 @@ export const BeforeAfterPlayer: React.FC = () => {
               {activeRally && (
                 <>
                   <span className="text-slate-500">|</span>
-                  <span className="text-slate-200">{activeRally.endingStroke.replace('_', ' ').toUpperCase()}</span>
+                  <span className="text-slate-200">POINT #{activeRally.index}</span>
                   <span className="text-[#CCFF00]">SHOT #{activeRally.shotCount}</span>
                 </>
               )}
@@ -293,10 +312,10 @@ export const BeforeAfterPlayer: React.FC = () => {
           <button
             onClick={() => triggerReplay()}
             className="ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-950 font-bold rounded-lg text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all"
-            title="Trigger slow-motion spotlight instant replay on this point"
+            title="Replay this point in slow-motion"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span className="font-mono">Spotlight Replay</span>
+            <span className="font-mono">Replay Point</span>
           </button>
         </div>
 

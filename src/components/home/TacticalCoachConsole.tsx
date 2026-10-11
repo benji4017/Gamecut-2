@@ -9,19 +9,19 @@ export const TacticalCoachConsole: React.FC = () => {
   const [customQueryText, setCustomQueryText] = useState('');
 
   const PRESET_QUERIES = [
-    "Analyze Ma Long's 3rd-ball loop attack rate",
-    "Show Hugo Calderano's backhand punch counters",
+    `Analyze ${player1.name}'s 3rd-ball attack rate`,
+    `Show ${player2.name}'s counter-attack efficiency`,
     "What was the longest marathon sequence?",
     "How does the Zod schema eliminate dead-time rally overlaps?",
   ];
 
   // Precomputed AI Tactical Coach Insights
   const getCoachAnswer = (query: string): string => {
-    if (query.includes('3rd-ball') || query.includes('Ma Long')) {
-      return `Ma Long initiated 4 third-ball attacks with an 75.0% point-conversion efficiency. By utilizing reverse pendular short serves with heavy backspin/sidespin, he forced loose half-long pushes, setting up immediate inside-out forehand loops into deep corner angles with an average ball speed of 114 km/h.`;
+    if (query.includes('3rd-ball') || query.includes(player1.name)) {
+      return `${player1.name} initiated 4 third-ball attacks with high efficiency. By utilizing tight spin serves, they set up immediate offensive initiative into deep corner angles.`;
     }
-    if (query.includes('Hugo') || query.includes('backhand')) {
-      return `Hugo Calderano's backhand punch counters generated 3 decisive winners. In Rally #2, he stood 1.2m behind the table and redirected Ma Long's heavy topspin loop with a compact closed-racket wrist punch into the body pocket, forcing a defensive net error.`;
+    if (query.includes(player2.name) || query.includes('counter')) {
+      return `${player2.name}'s counter-drives generated decisive winners, redirecting heavy topspin with compact stroke execution.`;
     }
     if (query.includes('marathon') || query.includes('longest')) {
       const longest = [...rallies].sort((a, b) => (b.shotCount || 0) - (a.shotCount || 0))[0];

@@ -241,18 +241,18 @@ export const RallyThumbnailCard: React.FC<RallyThumbnailCardProps> = ({
                   isP1Winner ? 'text-[#00F5D4]' : 'text-blue-400'
                 }`}
               >
-                {winnerName.split(' ')[0]}
+                {winnerName.toLowerCase().startsWith('player') ? winnerName : winnerName.split(' ')[0]}
               </span>
             </div>
           </div>
 
-          {/* Stroke Classification & Ending Type */}
+          {/* Point Header (No Winning Stroke Tag) */}
           <div className="mt-1 flex items-baseline justify-between gap-2">
             <h4 className="text-sm font-bold text-white tracking-tight group-hover:text-[#00F5D4] transition-colors truncate">
-              {strokeLabel}
+              Point #{rally.index}
             </h4>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 shrink-0">
-              {rally.endingType.replace('_', ' ')}
+            <span className="text-[10px] font-mono tracking-wider text-slate-400 shrink-0">
+              {rally.shotCount} shots
             </span>
           </div>
 
