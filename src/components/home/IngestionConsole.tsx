@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useRallyCut } from '../../context/RallyCutContext';
-import { Upload } from 'lucide-react';
+import { Upload, Sparkles, KeyRound } from 'lucide-react';
 
 const YoutubeIcon: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -9,7 +9,14 @@ const YoutubeIcon: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' }
 );
 
 export const IngestionConsole: React.FC = () => {
-  const { loadSampleMatch, importVideoFile, importYoutubeUrl, isAnalyzing } = useRallyCut();
+  const {
+    loadSampleMatch,
+    importVideoFile,
+    importYoutubeUrl,
+    isAnalyzing,
+    geminiApiKey,
+    setIsKeyModalOpen,
+  } = useRallyCut();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeIngestTab, setActiveIngestTab] = useState<'demo' | 'upload' | 'youtube'>('demo');
   const [youtubeInput, setYoutubeInput] = useState('');
@@ -82,6 +89,36 @@ export const IngestionConsole: React.FC = () => {
             YouTube Link
           </button>
         </div>
+      </div>
+
+      {/* Gemini Vision API Status Banner */}
+      <div className="px-6 py-3 bg-slate-950/70 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-2.5 h-2.5 rounded-full ${geminiApiKey ? 'bg-[#00F5D4] animate-pulse shadow-sm shadow-[#00F5D4]' : 'bg-amber-400'}`} />
+          <div>
+            <span className="font-bold text-white">
+              {geminiApiKey ? 'Gemini 2.5 Flash Vision: Active' : 'Gemini AI Vision Key Not Set'}
+            </span>
+            <span className="text-slate-400 ml-2 hidden sm:inline">
+              {geminiApiKey
+                ? 'Videos uploaded are sent directly to Google Gemini Multimodal Vision API.'
+                : 'Uploads will run local motion engine unless Gemini API key is configured.'}
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsKeyModalOpen(true)}
+          className={`px-3 py-1.5 rounded-lg font-mono font-bold text-[11px] transition-all flex items-center gap-1.5 shrink-0 ${
+            geminiApiKey
+              ? 'bg-slate-800 text-[#00F5D4] hover:bg-slate-700 border border-[#00F5D4]/30'
+              : 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/30'
+          }`}
+          title="Configure Google Gemini API Key"
+        >
+          <Sparkles className="w-3 h-3" />
+          <span>{geminiApiKey ? 'Change Gemini Key' : 'Connect Gemini API Key'}</span>
+        </button>
       </div>
 
       {/* Tab Content Panels */}

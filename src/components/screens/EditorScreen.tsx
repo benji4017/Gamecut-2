@@ -17,9 +17,20 @@ export const EditorScreen: React.FC = () => {
     runAiAnalysis,
     isAnalyzing,
     moveRally,
+    geminiApiKey,
+    setIsKeyModalOpen,
+    analyzedBy,
   } = useRallyCut();
 
   const activeCount = rallies.filter((r) => !r.excluded).length;
+
+  const handleGeminiAnalyzeClick = () => {
+    if (!geminiApiKey) {
+      setIsKeyModalOpen(true);
+    } else {
+      runAiAnalysis();
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto py-4 px-4 space-y-6">
@@ -45,15 +56,40 @@ export const EditorScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
+          {analyzedBy === 'gemini-2.5-flash' ? (
+            <span className="text-[10px] font-mono text-[#00F5D4] flex items-center gap-1.5 bg-[#00F5D4]/10 border border-[#00F5D4]/30 px-2 py-1 rounded-lg">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00F5D4] animate-pulse" />
+              <span>Gemini 2.5 Flash</span>
+            </span>
+          ) : (
+            <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">
+              <span>Local Engine</span>
+            </span>
+          )}
+
           <button
-            onClick={() => runAiAnalysis()}
+            onClick={handleGeminiAnalyzeClick}
             disabled={isAnalyzing}
-            className="flex items-center gap-1.5 py-2 px-3.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#00F5D4] border border-[#00F5D4]/30 font-bold text-xs disabled:opacity-50 transition-all shadow-sm active:scale-95"
-            title="Re-run Gemini AI Vision analysis to detect rallies and eliminate dead time"
+            className={`flex items-center gap-1.5 py-2 px-3.5 rounded-lg border font-bold text-xs disabled:opacity-50 transition-all shadow-sm active:scale-95 ${
+              geminiApiKey
+                ? 'bg-slate-800 hover:bg-slate-700 text-[#00F5D4] border-[#00F5D4]/30'
+                : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+            }`}
+            title={
+              geminiApiKey
+                ? 'Analyze with Google Gemini 2.5 Flash Vision'
+                : 'Connect Gemini API Key to run Multimodal Vision'
+            }
             aria-label="Re-analyze match with Gemini"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{isAnalyzing ? 'Analyzing...' : 'Gemini Vision Analyze'}</span>
+            <span>
+              {isAnalyzing
+                ? 'Analyzing...'
+                : geminiApiKey
+                ? 'Gemini Vision Analyze'
+                : 'Connect Gemini Key'}
+            </span>
           </button>
 
           <button

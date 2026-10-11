@@ -16,11 +16,20 @@ export async function analyzeVideoWithBackend(
   videoUrl?: string | null,
   onProgress?: (progress: AnalysisProgressCallback) => void,
   apiKey?: string | null,
-): Promise<{ rallies: RallyInterval[]; duration?: number; uploadedPath?: string }> {
+): Promise<{
+  rallies: RallyInterval[];
+  duration?: number;
+  uploadedPath?: string;
+  analyzedBy?: string;
+  geminiError?: string;
+  geminiNotice?: string;
+}> {
   onProgress?.({
     stage: 'initializing',
     percent: 15,
-    message: 'Connecting to RallyCut Video Engine backend...',
+    message: apiKey
+      ? 'Connecting to Gemini 2.5 Flash Multimodal Vision backend...'
+      : 'Connecting to RallyCut Video Engine backend...',
   });
 
   let uploadedPath = '';
@@ -52,12 +61,19 @@ export async function analyzeVideoWithBackend(
     onProgress?.({
       stage: 'analysis_job',
       percent: 45,
-      message: 'Dispatching match video to Gemini AI & optical boundary detector...',
+      message: apiKey
+        ? 'Uploading stream to Google Gemini Multimodal Vision API...'
+        : 'Analyzing match video with local motion & boundary detector...',
     });
+
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (apiKey) {
+      headers['x-gemini-api-key'] = apiKey;
+    }
 
     const analyzeRes = await fetch('/api/analyze', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         videoPath: uploadedPath || videoUrl || '/sample_pro_match.mp4',
         filename: videoFile?.name,
@@ -71,9 +87,10 @@ export async function analyzeVideoWithBackend(
       // Poll job progress
       if (jobId) {
         let attempts = 0;
-        while (attempts < 30) {
+        let lastWarning = '';
+        while (attempts < 90) {
           attempts++;
-          await new Promise((r) => setTimeout(r, 600));
+          await new Promise((r) => setTimeout(r, 800));
 
           try {
             const jobRes = await fetch(`/api/jobs/${jobId}`);
@@ -85,18 +102,46 @@ export async function analyzeVideoWithBackend(
                 message: jobData.message || 'Processing video stream...',
               });
 
+              if (jobData.warning && jobData.warning !== lastWarning) {
+                lastWarning = jobData.warning;
+                window.dispatchEvent(
+                  new CustomEvent('rallycut-toast', {
+                    detail: { type: 'warning', message: jobData.warning },
+                  }),
+                );
+              }
+
               if (jobData.status === 'completed' && jobData.result?.rallies) {
                 const validatedRallies = validateAndTransformGeminiRallies(jobData.result.rallies);
                 const finalRallies = validatedRallies.length > 0 ? validatedRallies : jobData.result.rallies;
+                const analyzedBy = jobData.result.analyzedBy || (apiKey ? 'gemini-2.5-flash' : 'local_engine');
+
                 onProgress?.({
                   stage: 'completed',
                   percent: 100,
-                  message: `Detected ${finalRallies.length} competitive rallies!`,
+                  message: analyzedBy === 'gemini-2.5-flash'
+                    ? `Extracted ${finalRallies.length} points with Gemini 2.5 Flash!`
+                    : `Extracted ${finalRallies.length} points with motion detector!`,
                 });
+
+                if (analyzedBy === 'gemini-2.5-flash') {
+                  window.dispatchEvent(
+                    new CustomEvent('rallycut-toast', {
+                      detail: {
+                        type: 'ai',
+                        message: `Gemini 2.5 Flash Vision successfully analyzed match (${finalRallies.length} rallies mapped)!`,
+                      },
+                    }),
+                  );
+                }
+
                 return {
                   rallies: finalRallies,
                   duration: jobData.result.duration,
                   uploadedPath,
+                  analyzedBy,
+                  geminiError: jobData.result.geminiError,
+                  geminiNotice: jobData.result.geminiNotice,
                 };
               }
 
@@ -133,7 +178,7 @@ export async function analyzeVideoWithBackend(
     message: 'Analysis complete! 5 verified championship rallies synchronized.',
   });
 
-  return { rallies: SAMPLE_RALLIES, duration: 60, uploadedPath };
+  return { rallies: SAMPLE_RALLIES, duration: 60, uploadedPath, analyzedBy: 'local_engine' };
 }
 
 /**

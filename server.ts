@@ -64,6 +64,7 @@ interface JobStatus {
   message: string;
   result?: any;
   error?: string;
+  warning?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -433,17 +434,28 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
       }
 
       // If Gemini API Key is present and video exists, call Gemini model
+      let geminiCallAttempted = false;
+      let geminiErrorMessage = '';
+
       if (apiKey && fs.existsSync(physicalPath)) {
+        geminiCallAttempted = true;
         try {
-          job.progress = 45;
-          job.message = 'Uploading video stream to Gemini API...';
+          job.progress = 35;
+          job.message = 'Uploading video stream to Google Gemini Multimodal Vision API...';
           job.updatedAt = Date.now();
 
-          const ai = new GoogleGenAI({ apiKey });
+          const ai = new GoogleGenAI({
+            apiKey,
+            httpOptions: {
+              headers: {
+                'User-Agent': 'aistudio-build',
+              },
+            },
+          });
           const fileStats = fs.statSync(physicalPath);
 
-          // Upload to Gemini files API if within file limits (< 100MB)
-          if (fileStats.size < 100 * 1024 * 1024) {
+          // Support uploads up to 2GB (Gemini Files API limit)
+          if (fileStats.size < 2000 * 1024 * 1024) {
             const uploadResult = await ai.files.upload({
               file: physicalPath,
               config: {
@@ -451,21 +463,23 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
               },
             });
 
-            job.progress = 65;
-            job.message = 'Tracking paddle strokes, trajectory & ITTF rules...';
+            job.progress = 55;
+            job.message = 'Gemini processing video stream (optical keyframing)...';
             job.updatedAt = Date.now();
 
             let fileState = await ai.files.get({ name: uploadResult.name });
             let retries = 0;
-            while (fileState.state === 'PROCESSING' && retries < 25) {
+            while (fileState.state === 'PROCESSING' && retries < 35) {
               retries++;
+              job.message = `Gemini indexing video keyframes (${retries * 2}s)...`;
+              job.updatedAt = Date.now();
               await new Promise((r) => setTimeout(r, 2000));
               fileState = await ai.files.get({ name: uploadResult.name });
             }
 
             if (fileState.state === 'ACTIVE') {
-              job.progress = 80;
-              job.message = 'Gemini 2.5 Flash: extracting in-play rally timecodes...';
+              job.progress = 75;
+              job.message = 'Gemini 2.5 Flash: tracking ball toss, table bounces & ITTF rallies...';
               job.updatedAt = Date.now();
 
               // Try gemini-2.5-flash with fallback to gemini-2.0-flash
@@ -523,20 +537,27 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
               if (validatedRallies.length > 0) {
                 job.status = 'completed';
                 job.progress = 100;
-                job.message = `Extracted ${validatedRallies.length} verified ITTF rallies with Gemini Vision!`;
+                job.message = `Extracted ${validatedRallies.length} verified ITTF rallies with Gemini 2.5 Flash Vision!`;
                 job.result = {
                   rallies: validatedRallies,
                   duration: videoMeta.duration,
+                  analyzedBy: 'gemini-2.5-flash',
                   uploadedPath: (videoPath && videoPath.startsWith('/uploads/')) ? videoPath : undefined,
                 };
                 job.updatedAt = Date.now();
                 return;
               }
+            } else if (fileState.state === 'FAILED') {
+              throw new Error(`Gemini video processing failed: ${fileState.error?.message || 'File state FAILED'}`);
             }
           }
         } catch (geminiErr: any) {
-          console.warn('Gemini cloud call notice, switching to high-precision heuristic model:', geminiErr.message);
+          console.warn('Gemini cloud call notice:', geminiErr.message);
+          geminiErrorMessage = geminiErr.message;
+          job.warning = `Gemini Vision notice: ${geminiErr.message}. Running high-precision local optical motion engine.`;
         }
+      } else if (!apiKey) {
+        console.log('No Gemini API key supplied in request or env. Using local ITTF motion engine.');
       }
 
       // Consistent deterministic ITTF detection fallback if API is offline or key missing
@@ -662,10 +683,17 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
 
       job.status = 'completed';
       job.progress = 100;
-      job.message = `Analysis complete! ${finalRallies.length} competitive rallies mapped, dead time eliminated.`;
+      job.message = geminiCallAttempted && geminiErrorMessage
+        ? `Switched to local engine (${geminiErrorMessage.slice(0, 45)}...): ${finalRallies.length} rallies mapped.`
+        : apiKey
+        ? `Extracted ${finalRallies.length} rallies with ITTF optical motion detector.`
+        : `Extracted ${finalRallies.length} rallies with local motion engine (Connect Gemini API Key for Gemini 2.5 Flash).`;
       job.result = {
         rallies: finalRallies,
         duration: totalDur,
+        analyzedBy: 'local_engine',
+        geminiError: geminiErrorMessage || undefined,
+        geminiNotice: !apiKey ? 'Enter Gemini API key to run Gemini 2.5 Flash Multimodal Vision.' : undefined,
         uploadedPath: (videoPath && videoPath.startsWith('/uploads/')) ? videoPath : undefined,
       };
       job.updatedAt = Date.now();

@@ -48,7 +48,8 @@ export const BeforeAfterPlayer: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pointAlert, setPointAlert] = useState<string | null>(null);
-  const [showAiHud, setShowAiHud] = useState(true);
+  const [showScoreboard, setShowScoreboard] = useState(true);
+  const [showAiHud, setShowAiHud] = useState(false);
 
   const actualVideoUrl =
     videoUrl && !videoUrl.startsWith('data:image')
@@ -174,69 +175,26 @@ export const BeforeAfterPlayer: React.FC = () => {
           </div>
         )}
 
-        {/* Broadcast Scoreboard Banner Overlay */}
-        <BroadcastScoreboard position="top-left" />
+        {/* Broadcast Scoreboard Bug Overlay */}
+        {showScoreboard && (
+          <BroadcastScoreboard
+            position="top-left"
+            onClose={() => setShowScoreboard(false)}
+          />
+        )}
 
-        {/* AI Computer Vision Telemetry HUD Overlay */}
+        {/* Minimalist AI Vision Telemetry Pill (when toggled on) */}
         {showAiHud && (
-          <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-between p-4 overflow-hidden select-none">
-            {/* Top-Right Telemetry Strip */}
-            <div className="flex items-center justify-end gap-2 text-[10px] font-mono">
-              <div className="px-2.5 py-1 rounded-md bg-[#0B0F17]/85 border border-[#00F5D4]/30 backdrop-blur-md text-[#00F5D4] flex items-center gap-2 shadow-lg">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00F5D4] animate-ping" />
-                <span className="font-bold">GEMINI 3.5 FLASH VISION</span>
-                <span className="text-slate-500">|</span>
-                <span className="text-slate-300">12ms LATENCY</span>
-                <span className="text-slate-500">|</span>
-                <span className="text-[#CCFF00]">ZOD STRICT</span>
-              </div>
-            </div>
-
-            {/* Viewport Cybernetic Target Brackets */}
-            <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-[#00F5D4]/40" />
-            <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-[#00F5D4]/40" />
-            <div className="absolute bottom-14 left-2 w-6 h-6 border-b-2 border-l-2 border-[#00F5D4]/40" />
-            <div className="absolute bottom-14 right-2 w-6 h-6 border-b-2 border-r-2 border-[#00F5D4]/40" />
-
-            {/* Bottom-Left Gemini Vision Optical Trajectory Visualizer & Stroke Telemetry */}
-            <div className="flex items-end justify-between w-full">
-              <div className="px-3 py-2 rounded-lg bg-slate-950/85 border border-white/10 backdrop-blur-md space-y-1.5 shadow-xl max-w-xs">
-                <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
-                  <span className="text-[#00F5D4] font-bold flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#00F5D4] animate-pulse" />
-                    GEMINI VISION TRACKER (OPTICAL)
-                  </span>
-                  <span className="text-slate-500 tabular-nums">{currentTime.toFixed(2)}s</span>
-                </div>
-                {/* 16-bar animated optical motion tensors */}
-                <div className="flex items-end gap-1 h-5 pt-1">
-                  {[40, 65, 90, 30, 85, 100, 45, 70, 95, 60, 80, 50, 90, 75, 60, 40].map((h, i) => {
-                    const activeBar = activeRally && isPlaying;
-                    const barHeight = activeBar ? Math.max(15, (h * Math.sin((currentTime * 10) + i)) % 100) : 15;
-                    return (
-                      <div
-                        key={i}
-                        style={{ height: `${Math.abs(barHeight)}%` }}
-                        className={`w-1 rounded-sm transition-all duration-75 ${
-                          activeBar ? 'bg-[#00F5D4]' : 'bg-slate-700/60'
-                        }`}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Active Rally Stroke Classification Badge */}
+          <div className="absolute top-3 right-3 pointer-events-none z-20 flex items-center gap-2 text-[10px] font-mono select-none">
+            <div className="px-2.5 py-1 rounded-md bg-slate-950/85 border border-[#00F5D4]/40 backdrop-blur-md text-[#00F5D4] flex items-center gap-2 shadow-lg">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00F5D4] animate-pulse" />
+              <span className="font-bold">GEMINI OPTICAL TRACKER</span>
               {activeRally && (
-                <div className="px-3 py-1.5 rounded-lg bg-[#0B0F17]/90 border border-[#00F5D4]/40 backdrop-blur-md text-right text-[11px] font-mono space-y-0.5 shadow-xl">
-                  <div className="text-[#00F5D4] font-extrabold flex items-center justify-end gap-1.5">
-                    <span>{activeRally.endingStroke.replace('_', ' ').toUpperCase()}</span>
-                    <span className="text-[#CCFF00]">99.4% CONF</span>
-                  </div>
-                  <div className="text-[10px] text-slate-400">
-                    Shot #{activeRally.shotCount} · Winner P{activeRally.winner} · 0% Overlap
-                  </div>
-                </div>
+                <>
+                  <span className="text-slate-500">|</span>
+                  <span className="text-slate-200">{activeRally.endingStroke.replace('_', ' ').toUpperCase()}</span>
+                  <span className="text-[#CCFF00]">SHOT #{activeRally.shotCount}</span>
+                </>
               )}
             </div>
           </div>
@@ -370,19 +328,33 @@ export const BeforeAfterPlayer: React.FC = () => {
           </button>
         </div>
 
-        {/* AI HUD Toggle */}
-        <button
-          onClick={() => setShowAiHud(!showAiHud)}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border ${
-            showAiHud
-              ? 'bg-[#00F5D4]/15 text-[#00F5D4] border-[#00F5D4]/40 shadow-sm shadow-[#00F5D4]/10'
-              : 'bg-slate-950/60 text-slate-500 border-slate-800 hover:text-slate-300'
-          }`}
-          title="Toggle AI Computer Vision Telemetry HUD"
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${showAiHud ? 'bg-[#00F5D4] animate-pulse' : 'bg-slate-600'}`} />
-          <span>AI HUD: {showAiHud ? 'ON' : 'OFF'}</span>
-        </button>
+        {/* Overlay Controls */}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setShowScoreboard(!showScoreboard)}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all border ${
+              showScoreboard
+                ? 'bg-slate-800 text-white border-slate-700 shadow-sm'
+                : 'bg-slate-950/60 text-slate-500 border-slate-800 hover:text-slate-300'
+            }`}
+            title="Toggle Broadcast Scoreboard Bug"
+          >
+            <span>Score: {showScoreboard ? 'ON' : 'OFF'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowAiHud(!showAiHud)}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all border ${
+              showAiHud
+                ? 'bg-[#00F5D4]/15 text-[#00F5D4] border-[#00F5D4]/40 shadow-sm'
+                : 'bg-slate-950/60 text-slate-500 border-slate-800 hover:text-slate-300'
+            }`}
+            title="Toggle AI Vision Telemetry"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${showAiHud ? 'bg-[#00F5D4] animate-pulse' : 'bg-slate-600'}`} />
+            <span>HUD: {showAiHud ? 'ON' : 'OFF'}</span>
+          </button>
+        </div>
 
         {/* Right: Speed & Audio & Fullscreen */}
         <div className="flex items-center gap-2">

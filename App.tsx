@@ -8,6 +8,7 @@ import { ExportScreen } from './src/components/screens/ExportScreen';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import { ToastProvider } from './src/components/common/Toast';
 import { useKeyboardShortcuts } from './src/hooks/useKeyboardShortcuts';
+import { GeminiKeyModal } from './src/components/common/GeminiKeyModal';
 
 /** Page transition wrapper (#6) */
 const PageTransition: React.FC<{ screen: string; children: React.ReactNode }> = ({ screen, children }) => {
@@ -83,6 +84,7 @@ export default function App() {
         <RallyCutProvider>
           <div className="min-h-screen bg-[#0B0F17] text-slate-100 flex flex-col selection:bg-[#00F5D4] selection:text-slate-950 font-sans">
             <TopBar />
+            <GeminiKeyModal />
             <MainContent />
           </div>
         </RallyCutProvider>

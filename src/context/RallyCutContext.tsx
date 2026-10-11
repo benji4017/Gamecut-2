@@ -129,6 +129,9 @@ interface RallyCutContextType {
   setIsMatchLoaderOpen: (open: boolean) => void;
   geminiApiKey: string;
   setGeminiApiKey: (key: string) => void;
+  analyzedBy: string | null;
+  isKeyModalOpen: boolean;
+  setIsKeyModalOpen: (open: boolean) => void;
   loadSampleMatch: (presetId?: string) => Promise<void>;
   importVideoFile: (file: File) => Promise<void>;
   importYoutubeUrl: (url: string) => Promise<void>;
@@ -165,6 +168,8 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [activePresetId, setActivePresetId] = useState<string>('ittf_durban_2023');
   const [isMatchLoaderOpen, setIsMatchLoaderOpen] = useState<boolean>(false);
   const [deadTimeNotice, setDeadTimeNotice] = useState<string | null>(null);
+  const [analyzedBy, setAnalyzedBy] = useState<string | null>(null);
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState<boolean>(false);
 
   const [geminiApiKey, setGeminiApiKeyState] = useState<string>(() => {
     try {
@@ -507,6 +512,21 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setUploadedVideoPath(result.uploadedPath);
       }
 
+      if (result.analyzedBy) {
+        setAnalyzedBy(result.analyzedBy);
+      }
+
+      if (result.geminiNotice && !geminiApiKey) {
+        window.dispatchEvent(
+          new CustomEvent('rallycut-toast', {
+            detail: {
+              type: 'info',
+              message: result.geminiNotice,
+            },
+          }),
+        );
+      }
+
       if (result.rallies && result.rallies.length > 0) {
         setRawRallies(result.rallies);
         setSelectedRallyId(result.rallies[0]?.id || null);
@@ -518,7 +538,9 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           new CustomEvent('rallycut-toast', {
             detail: {
               type: 'ai',
-              message: `AI analysis complete! ${result.rallies.length} competitive rallies mapped, zero dead time.`,
+              message: result.analyzedBy === 'gemini-2.5-flash'
+                ? `Gemini 2.5 Flash Vision complete! ${result.rallies.length} competitive rallies mapped, zero dead time.`
+                : `AI analysis complete! ${result.rallies.length} competitive rallies mapped, zero dead time.`,
             },
           }),
         );
@@ -736,6 +758,9 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIsMatchLoaderOpen,
     geminiApiKey,
     setGeminiApiKey,
+    analyzedBy,
+    isKeyModalOpen,
+    setIsKeyModalOpen,
     loadSampleMatch,
     importVideoFile,
     importYoutubeUrl,

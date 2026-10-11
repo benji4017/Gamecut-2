@@ -29,13 +29,11 @@ export const TopBar: React.FC = () => {
     undo,
     redo,
     geminiApiKey,
-    setGeminiApiKey,
+    setIsKeyModalOpen,
   } = useRallyCut();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [keyInput, setKeyInput] = useState(geminiApiKey || '');
 
   // Dark/Light mode toggle (#1)
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -144,19 +142,19 @@ export const TopBar: React.FC = () => {
 
         {/* Gemini API Key config button */}
         <button
-          onClick={() => {
-            setKeyInput(geminiApiKey || '');
-            setShowKeyModal(true);
-          }}
-          className={`p-1.5 rounded-lg border transition-all ${
+          onClick={() => setIsKeyModalOpen(true)}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium transition-all ${
             geminiApiKey
               ? 'bg-[#00F5D4]/15 border-[#00F5D4]/40 text-[#00F5D4]'
               : 'border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
           }`}
-          title={geminiApiKey ? 'Gemini API Key configured' : 'Configure Gemini API Key'}
+          title={geminiApiKey ? 'Gemini 2.5 Flash API Connected' : 'Configure Google Gemini API Key'}
           aria-label="Configure Gemini API Key"
         >
           <KeyRound className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">
+            {geminiApiKey ? 'Gemini Active' : 'Gemini Key'}
+          </span>
         </button>
 
         {/* Keyboard shortcuts hint (#2) */}
@@ -260,94 +258,6 @@ export const TopBar: React.FC = () => {
         </div>
       )}
 
-      {/* Gemini API Key Modal */}
-      {showKeyModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-white font-bold text-sm">
-                <KeyRound className="w-4 h-4 text-[#00F5D4]" />
-                <span>Gemini API Key Settings</span>
-              </div>
-              <button
-                onClick={() => setShowKeyModal(false)}
-                className="text-slate-500 hover:text-white"
-                aria-label="Close API Key dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Enter your Google Gemini API key to enable Gemini 2.5 Flash video computer vision for your uploaded table tennis matches.
-            </p>
-
-            <div className="space-y-1.5">
-              <input
-                type="password"
-                placeholder="AIzaSy..."
-                value={keyInput}
-                onChange={(e) => setKeyInput(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-[#00F5D4]"
-              />
-              <div className="text-[10px] text-slate-500 font-mono">
-                Key is stored safely in browser localStorage and sent to local analysis endpoints.
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              {geminiApiKey ? (
-                <button
-                  onClick={() => {
-                    setGeminiApiKey('');
-                    setKeyInput('');
-                    setShowKeyModal(false);
-                    window.dispatchEvent(
-                      new CustomEvent('rallycut-toast', {
-                        detail: {
-                          type: 'info',
-                          message: 'Gemini API Key removed. Using offline optical engine.',
-                        },
-                      }),
-                    );
-                  }}
-                  className="text-xs text-red-400 hover:text-red-300 font-mono"
-                >
-                  Clear Key
-                </button>
-              ) : (
-                <div />
-              )}
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowKeyModal(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setGeminiApiKey(keyInput.trim());
-                    setShowKeyModal(false);
-                    window.dispatchEvent(
-                      new CustomEvent('rallycut-toast', {
-                        detail: {
-                          type: 'success',
-                          message: 'Gemini API Key saved successfully!',
-                        },
-                      }),
-                    );
-                  }}
-                  className="px-4 py-1.5 rounded-lg bg-[#00F5D4] text-slate-950 font-bold text-xs hover:bg-[#20f7dc]"
-                >
-                  Save Key
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 };
