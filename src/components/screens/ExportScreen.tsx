@@ -36,6 +36,8 @@ export const ExportScreen: React.FC = () => {
     updateExportSettings,
     branding,
     updateBranding,
+    uploadedVideoPath,
+    videoUrl,
   } = useRallyCut();
 
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -131,6 +133,7 @@ export const ExportScreen: React.FC = () => {
         activeRallies,
         exportSettings.aspectRatio,
         exportSettings.quality,
+        uploadedVideoPath || videoUrl,
         (prog) => {
           setExportProgress(prog.percent);
           setRenderStatus(prog.message);

@@ -12,10 +12,14 @@ import {
   Minus,
   Sparkles,
   RotateCcw,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 
 interface RallyClipCardProps {
   rally: RallyInterval;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
 
 const STROKE_OPTIONS: { id: EndingStroke; label: string }[] = [
@@ -30,7 +34,11 @@ const STROKE_OPTIONS: { id: EndingStroke; label: string }[] = [
   { id: 'serve_ace', label: 'Ace Serve' },
 ];
 
-export const RallyClipCard: React.FC<RallyClipCardProps> = ({ rally }) => {
+export const RallyClipCard: React.FC<RallyClipCardProps> = ({
+  rally,
+  onMoveUp,
+  onMoveDown,
+}) => {
   const {
     activeRally,
     seekToRally,
@@ -82,6 +90,28 @@ export const RallyClipCard: React.FC<RallyClipCardProps> = ({ rally }) => {
               <span className="font-mono font-bold text-sm text-white">
                 Rally #{rally.index.toString().padStart(2, '0')}
               </span>
+              {(onMoveUp || onMoveDown) && (
+                <div className="flex items-center gap-0.5 bg-slate-800/80 rounded p-0.5 border border-slate-700/60">
+                  <button
+                    disabled={!onMoveUp}
+                    onClick={onMoveUp}
+                    className="p-0.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                    title="Move rally earlier in reel"
+                    aria-label="Move rally up"
+                  >
+                    <ArrowUp className="w-3 h-3" />
+                  </button>
+                  <button
+                    disabled={!onMoveDown}
+                    onClick={onMoveDown}
+                    className="p-0.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                    title="Move rally later in reel"
+                    aria-label="Move rally down"
+                  >
+                    <ArrowDown className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
               <span className="text-xs text-slate-400 font-mono">
                 Game {rally.gameNumber}
               </span>

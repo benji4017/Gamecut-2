@@ -39,6 +39,7 @@ export const BeforeAfterPlayer: React.FC = () => {
     replayState,
     triggerReplay,
     exitReplay,
+    deadTimeNotice,
   } = useRallyCut();
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -197,17 +198,17 @@ export const BeforeAfterPlayer: React.FC = () => {
             <div className="absolute bottom-14 left-2 w-6 h-6 border-b-2 border-l-2 border-[#00F5D4]/40" />
             <div className="absolute bottom-14 right-2 w-6 h-6 border-b-2 border-r-2 border-[#00F5D4]/40" />
 
-            {/* Bottom-Left Acoustic Resonance Visualizer & Stroke Telemetry */}
+            {/* Bottom-Left Gemini Vision Optical Trajectory Visualizer & Stroke Telemetry */}
             <div className="flex items-end justify-between w-full">
               <div className="px-3 py-2 rounded-lg bg-slate-950/85 border border-white/10 backdrop-blur-md space-y-1.5 shadow-xl max-w-xs">
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
                   <span className="text-[#00F5D4] font-bold flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#00F5D4]" />
-                    ACOUSTIC PING DETECTOR (2.4kHz)
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00F5D4] animate-pulse" />
+                    GEMINI VISION TRACKER (OPTICAL)
                   </span>
                   <span className="text-slate-500 tabular-nums">{currentTime.toFixed(2)}s</span>
                 </div>
-                {/* 16-bar animated audio equalizer */}
+                {/* 16-bar animated optical motion tensors */}
                 <div className="flex items-end gap-1 h-5 pt-1">
                   {[40, 65, 90, 30, 85, 100, 45, 70, 95, 60, 80, 50, 90, 75, 60, 40].map((h, i) => {
                     const activeBar = activeRally && isPlaying;
@@ -253,11 +254,30 @@ export const BeforeAfterPlayer: React.FC = () => {
           </div>
         )}
 
+        {/* Dead Time Skip Notification Pill */}
+        {deadTimeNotice && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-slate-900/95 border border-[#00F5D4] text-xs font-mono font-bold text-[#00F5D4] shadow-2xl pointer-events-none z-30 flex items-center gap-2 animate-bounce">
+            <span>{deadTimeNotice}</span>
+          </div>
+        )}
+
         {/* Point notification toast banner */}
-        {pointAlert && activeRally && !replayState.isActive && (
+        {pointAlert && activeRally && !replayState.isActive && !deadTimeNotice && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-[#00F5D4]/40 text-xs font-mono text-white shadow-xl pointer-events-none z-20 flex items-center gap-2">
             <span className="text-[#00F5D4]">⚡</span>
             <span>{pointAlert}</span>
+          </div>
+        )}
+
+        {/* Thin Glowing Rally Progress Bar (#8) */}
+        {activeRally && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800/80 z-25 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#00F5D4] via-[#CCFF00] to-[#00F5D4] shadow-[0_0_8px_rgba(0,245,212,0.8)] transition-all duration-75"
+              style={{
+                width: `${Math.max(0, Math.min(100, ((currentTime - activeRally.startTime) / Math.max(0.1, activeRally.endTime - activeRally.startTime)) * 100))}%`,
+              }}
+            />
           </div>
         )}
       </div>

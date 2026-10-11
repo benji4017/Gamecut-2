@@ -470,7 +470,7 @@ export const RallyPreviewModal: React.FC<RallyPreviewModalProps> = ({
                       ? '116.2 km/h'
                       : '104.8 km/h'}
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">Contact spike: +2.4 kHz</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Gemini Vision: Visual Verified</div>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">

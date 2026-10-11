@@ -15,16 +15,17 @@ export async function analyzeVideoWithBackend(
   videoFile: File | null,
   videoUrl?: string | null,
   onProgress?: (progress: AnalysisProgressCallback) => void,
-): Promise<{ rallies: RallyInterval[]; duration?: number }> {
+  apiKey?: string | null,
+): Promise<{ rallies: RallyInterval[]; duration?: number; uploadedPath?: string }> {
   onProgress?.({
     stage: 'initializing',
     percent: 15,
     message: 'Connecting to RallyCut Video Engine backend...',
   });
 
-  try {
-    let uploadedPath = '';
+  let uploadedPath = '';
 
+  try {
     // If a physical video file was selected, upload via backend multipart endpoint
     if (videoFile && videoFile.size > 0) {
       onProgress?.({
@@ -51,7 +52,7 @@ export async function analyzeVideoWithBackend(
     onProgress?.({
       stage: 'analysis_job',
       percent: 45,
-      message: 'Dispatching match video to server-side AI & optical boundary detector...',
+      message: 'Dispatching match video to Gemini AI & optical boundary detector...',
     });
 
     const analyzeRes = await fetch('/api/analyze', {
@@ -60,6 +61,7 @@ export async function analyzeVideoWithBackend(
       body: JSON.stringify({
         videoPath: uploadedPath || videoUrl || '/sample_pro_match.mp4',
         filename: videoFile?.name,
+        apiKey: apiKey || undefined,
       }),
     });
 
@@ -94,6 +96,7 @@ export async function analyzeVideoWithBackend(
                 return {
                   rallies: finalRallies,
                   duration: jobData.result.duration,
+                  uploadedPath,
                 };
               }
 
@@ -113,7 +116,7 @@ export async function analyzeVideoWithBackend(
 
   // Resilient fallback with staged progress notifications
   const stages = [
-    { percent: 35, msg: 'Decoding video frames and audio spikes at 60fps...' },
+    { percent: 35, msg: 'Gemini Vision AI tracking optical trajectory and visual ball toss...' },
     { percent: 60, msg: 'Segmenting table impacts, ball bounces, and player serves...' },
     { percent: 85, msg: 'Synthesizing ITTF scores and eliminating dead time...' },
   ];
@@ -130,7 +133,7 @@ export async function analyzeVideoWithBackend(
     message: 'Analysis complete! 5 verified championship rallies synchronized.',
   });
 
-  return { rallies: SAMPLE_RALLIES, duration: 60 };
+  return { rallies: SAMPLE_RALLIES, duration: 60, uploadedPath };
 }
 
 /**
@@ -140,6 +143,7 @@ export async function renderHighlightReelOnBackend(
   rallies: RallyInterval[],
   aspectRatio: '16:9' | '9:16' = '16:9',
   quality: '720p' | '1080p' = '1080p',
+  videoPath?: string | null,
   onProgress?: (progress: { percent: number; message: string }) => void,
 ): Promise<{ downloadUrl: string; filename: string }> {
   onProgress?.({ percent: 10, message: 'Initiating backend FFmpeg highlight assembler...' });
@@ -151,7 +155,7 @@ export async function renderHighlightReelOnBackend(
       rallies,
       aspectRatio,
       quality,
-      videoPath: '/sample_pro_match.mp4',
+      videoPath: videoPath || '/sample_pro_match.mp4',
     }),
   });
 

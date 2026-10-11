@@ -24,7 +24,7 @@ import {useEffect, useRef, useState} from 'react';
 import {timeToSecs} from './utils';
 
 export default function Chart({data, yLabel, jumpToTimecode}) {
-  const chartRef = useRef();
+  const chartRef = useRef<SVGSVGElement | null>(null);
   const [width, setWidth] = useState(1);
   const [height, setHeight] = useState(1);
   const margin = 55;
@@ -49,8 +49,10 @@ export default function Chart({data, yLabel, jumpToTimecode}) {
 
   useEffect(() => {
     const setSize = () => {
-      setWidth(chartRef.current.clientWidth);
-      setHeight(chartRef.current.clientHeight);
+      if (chartRef.current) {
+        setWidth(chartRef.current.clientWidth);
+        setHeight(chartRef.current.clientHeight);
+      }
     };
 
     setSize();

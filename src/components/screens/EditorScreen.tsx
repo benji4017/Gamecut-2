@@ -14,6 +14,9 @@ export const EditorScreen: React.FC = () => {
     setActiveScreen,
     playbackMode,
     setPlaybackMode,
+    runAiAnalysis,
+    isAnalyzing,
+    moveRally,
   } = useRallyCut();
 
   const activeCount = rallies.filter((r) => !r.excluded).length;
@@ -43,8 +46,19 @@ export const EditorScreen: React.FC = () => {
 
         <div className="flex items-center gap-2.5">
           <button
+            onClick={() => runAiAnalysis()}
+            disabled={isAnalyzing}
+            className="flex items-center gap-1.5 py-2 px-3.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#00F5D4] border border-[#00F5D4]/30 font-bold text-xs disabled:opacity-50 transition-all shadow-sm active:scale-95"
+            title="Re-run Gemini AI Vision analysis to detect rallies and eliminate dead time"
+            aria-label="Re-analyze match with Gemini"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{isAnalyzing ? 'Analyzing...' : 'Gemini Vision Analyze'}</span>
+          </button>
+
+          <button
             onClick={() => setActiveScreen('export')}
-            className="flex items-center gap-2 py-2 px-4 rounded-lg bg-[#00F5D4] text-slate-950 hover:bg-[#20f7dc] font-bold text-xs shadow-md shadow-[#00F5D4]/20 transition-all"
+            className="flex items-center gap-2 py-2 px-4 rounded-lg bg-[#00F5D4] text-slate-950 hover:bg-[#20f7dc] font-bold text-xs shadow-md shadow-[#00F5D4]/20 transition-all active:scale-95"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export Highlight Reel</span>
@@ -72,8 +86,13 @@ export const EditorScreen: React.FC = () => {
                 No rallies match this filter. Try selecting "All Points".
               </div>
             ) : (
-              filteredRallies.map((rally) => (
-                <RallyClipCard key={rally.id} rally={rally} />
+              filteredRallies.map((rally, index) => (
+                <RallyClipCard
+                  key={rally.id}
+                  rally={rally}
+                  onMoveUp={index > 0 ? () => moveRally(index, index - 1) : undefined}
+                  onMoveDown={index < filteredRallies.length - 1 ? () => moveRally(index, index + 1) : undefined}
+                />
               ))
             )}
           </div>

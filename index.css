@@ -17,6 +17,88 @@
     --text-muted: #6B7280;
   }
 
+  /* Light Mode (#1) */
+  .light-mode {
+    --background: #F8FAFC;
+    --surface: #FFFFFF;
+    --surface-elevated: #F1F5F9;
+    --surface-glass: rgba(255, 255, 255, 0.85);
+    --border: #E2E8F0;
+    --border-subtle: rgba(148, 163, 184, 0.4);
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+  }
+
+  .light-mode body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+  }
+
+  .light-mode .bg-\[\#0B0F17\] {
+    background-color: #F8FAFC;
+  }
+
+  .light-mode .bg-slate-900\/90 {
+    background-color: rgba(241, 245, 249, 0.9);
+  }
+
+  .light-mode .bg-slate-900\/80 {
+    background-color: rgba(241, 245, 249, 0.8);
+  }
+
+  .light-mode .bg-slate-900\/95 {
+    background-color: rgba(241, 245, 249, 0.95);
+  }
+
+  .light-mode .bg-slate-950\/90 {
+    background-color: rgba(226, 232, 240, 0.9);
+  }
+
+  .light-mode .bg-slate-950 {
+    background-color: #E2E8F0;
+  }
+
+  .light-mode .bg-slate-900 {
+    background-color: #F1F5F9;
+  }
+
+  .light-mode .border-slate-800 {
+    border-color: #E2E8F0;
+  }
+
+  .light-mode .border-slate-800\/80 {
+    border-color: rgba(226, 232, 240, 0.8);
+  }
+
+  .light-mode .border-slate-700 {
+    border-color: #CBD5E1;
+  }
+
+  .light-mode .text-white {
+    color: #0F172A;
+  }
+
+  .light-mode .text-slate-100 {
+    color: #1E293B;
+  }
+
+  .light-mode .text-slate-200 {
+    color: #334155;
+  }
+
+  .light-mode .text-slate-300 {
+    color: #475569;
+  }
+
+  .light-mode .text-slate-400 {
+    color: #64748B;
+  }
+
+  .light-mode .text-slate-500 {
+    color: #94A3B8;
+  }
+
   * {
     border-color: var(--border-subtle);
   }
@@ -96,15 +178,11 @@ input[type="range"].rally-scrubber::-webkit-slider-thumb:hover {
 }
 
 .ai-scanlines {
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%,
-    rgba(0, 245, 212, 0.025) 50%
-  ), linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 0.015),
-    rgba(0, 255, 0, 0.01),
-    rgba(0, 0, 255, 0.015)
-  );
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+      rgba(0, 245, 212, 0.025) 50%), linear-gradient(90deg,
+      rgba(255, 0, 0, 0.015),
+      rgba(0, 255, 0, 0.01),
+      rgba(0, 0, 255, 0.015));
   background-size: 100% 3px, 3px 100%;
 }
 
@@ -118,6 +196,7 @@ input[type="range"].rally-scrubber::-webkit-slider-thumb:hover {
 .ai-glow-border {
   position: relative;
 }
+
 .ai-glow-border::before {
   content: '';
   position: absolute;
@@ -129,19 +208,20 @@ input[type="range"].rally-scrubber::-webkit-slider-thumb:hover {
   filter: blur(4px);
   transition: opacity 0.3s ease;
 }
+
 .ai-glow-border:hover::before {
   opacity: 0.65;
 }
 
-/* GameCut Cyber Cyan & Laser Lime Neon Hover Card */
+/* GameCut Cyber Cyan & Laser Lime Neon Hover Card (#9) */
 .gamecut-neon-card {
   position: relative;
   background: #0B0F17;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.875rem;
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.28s ease;
+    box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.28s ease;
 }
 
 .gamecut-neon-card::after {
@@ -161,8 +241,8 @@ input[type="range"].rally-scrubber::-webkit-slider-thumb:hover {
   transform: translateY(-6px);
   border-color: rgba(0, 245, 212, 0.55);
   box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.8),
-              0 0 24px 0 rgba(0, 245, 212, 0.28),
-              0 0 12px 0 rgba(163, 230, 53, 0.22);
+    0 0 24px 0 rgba(0, 245, 212, 0.28),
+    0 0 12px 0 rgba(163, 230, 53, 0.22);
 }
 
 .gamecut-neon-card:hover::after {
@@ -170,11 +250,119 @@ input[type="range"].rally-scrubber::-webkit-slider-thumb:hover {
 }
 
 @keyframes pulseGlow {
-  0%, 100% { opacity: 0.35; filter: blur(6px); }
-  50% { opacity: 0.75; filter: blur(9px); }
+
+  0%,
+  100% {
+    opacity: 0.35;
+    filter: blur(6px);
+  }
+
+  50% {
+    opacity: 0.75;
+    filter: blur(9px);
+  }
 }
 
 .neon-halo-pulse {
   animation: pulseGlow 2.5s infinite ease-in-out;
 }
 
+/* ============================================================================
+   New Animations (#4, #5, #6)
+   ============================================================================ */
+
+/* Skeleton shimmer (#4) */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.04) 40%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.04) 60%,
+      transparent 100%);
+  animation: shimmer 1.8s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Toast slide-in (#5) */
+.animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile nav slide-down (#3) */
+.animate-slide-down {
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in (#6, #19) */
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Drag-over highlight for reorder (#18) */
+.drag-over-highlight {
+  outline: 2px dashed #00F5D4;
+  outline-offset: 2px;
+  background: rgba(0, 245, 212, 0.05) !important;
+}
+
+/* Video progress bar glow (#8) */
+.video-progress-bar {
+  height: 3px;
+  background: linear-gradient(90deg, #00F5D4, #70FFDB);
+  box-shadow: 0 0 8px rgba(0, 245, 212, 0.6), 0 0 2px rgba(0, 245, 212, 0.8);
+  transition: width 0.15s linear;
+  border-radius: 0 0 4px 4px;
+}

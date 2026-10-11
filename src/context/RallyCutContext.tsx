@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -31,6 +32,41 @@ import {
 
 export type ScreenType = 'home' | 'editor' | 'analytics' | 'export';
 
+// ============================================================================
+// localStorage Persistence Helpers (#10)
+// ============================================================================
+const STORAGE_KEY = 'rallycut_state';
+
+interface PersistedState {
+  rawRallies: RallyInterval[];
+  player1: PlayerInfo;
+  player2: PlayerInfo;
+  branding: ClubBranding;
+  exportSettings: ExportSettings;
+  activeScreen: ScreenType;
+}
+
+function loadPersistedState(): Partial<PersistedState> | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function savePersistedState(state: PersistedState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Silently fail if storage is full
+  }
+}
+
+// ============================================================================
+// Context Type
+// ============================================================================
 interface RallyCutContextType {
   activeScreen: ScreenType;
   setActiveScreen: (screen: ScreenType) => void;
@@ -38,6 +74,7 @@ interface RallyCutContextType {
   // Video State
   videoUrl: string | null;
   videoFile: File | null;
+  uploadedVideoPath: string | null;
   youtubeVideoId: string | null;
   youtubeUrl: string | null;
   videoDuration: number;
@@ -45,6 +82,7 @@ interface RallyCutContextType {
   isPlaying: boolean;
   playbackMode: 'all' | 'rallies_only';
   playbackSpeed: number;
+  deadTimeNotice: string | null;
   setPlaybackSpeed: (speed: number) => void;
   setVideoDuration: (dur: number) => void;
   setCurrentTime: (time: number) => void;
@@ -80,6 +118,7 @@ interface RallyCutContextType {
   overrideRallyWinner: (rallyId: string, winner: 1 | 2) => void;
   toggleExcludeRally: (rallyId: string) => void;
   updateRally: (rallyId: string, updates: Partial<RallyInterval>) => void;
+  moveRally: (fromIndex: number, toIndex: number) => void;
 
   // Ingestion & AI
   isAnalyzing: boolean;
@@ -88,22 +127,34 @@ interface RallyCutContextType {
   setActivePresetId: (id: string) => void;
   isMatchLoaderOpen: boolean;
   setIsMatchLoaderOpen: (open: boolean) => void;
+  geminiApiKey: string;
+  setGeminiApiKey: (key: string) => void;
   loadSampleMatch: (presetId?: string) => Promise<void>;
   importVideoFile: (file: File) => Promise<void>;
   importYoutubeUrl: (url: string) => Promise<void>;
-  runAiAnalysis: () => Promise<void>;
+  runAiAnalysis: (fileOverride?: File | null, urlOverride?: string | null) => Promise<void>;
 
   // Export Settings
   exportSettings: ExportSettings;
   updateExportSettings: (settings: Partial<ExportSettings>) => void;
+
+  // Undo/Redo (#20)
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
 }
 
 const RallyCutContext = createContext<RallyCutContextType | null>(null);
 
 export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeScreen, setActiveScreen] = useState<ScreenType>('home');
+  // Load persisted state (#10)
+  const persisted = useRef(loadPersistedState());
+
+  const [activeScreen, setActiveScreenRaw] = useState<ScreenType>(persisted.current?.activeScreen || 'home');
   const [videoUrl, setVideoUrl] = useState<string | null>(REAL_MATCH_VIDEO_URL);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploadedVideoPath, setUploadedVideoPath] = useState<string | null>(null);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number>(60);
@@ -113,10 +164,27 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [activePresetId, setActivePresetId] = useState<string>('ittf_durban_2023');
   const [isMatchLoaderOpen, setIsMatchLoaderOpen] = useState<boolean>(false);
+  const [deadTimeNotice, setDeadTimeNotice] = useState<string | null>(null);
 
-  const [player1, setPlayer1] = useState<PlayerInfo>(SAMPLE_PLAYERS.p1);
-  const [player2, setPlayer2] = useState<PlayerInfo>(SAMPLE_PLAYERS.p2);
-  const [branding, setBranding] = useState<ClubBranding>(SAMPLE_BRANDING);
+  const [geminiApiKey, setGeminiApiKeyState] = useState<string>(() => {
+    try {
+      return localStorage.getItem('rallycut_gemini_api_key') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const setGeminiApiKey = useCallback((key: string) => {
+    setGeminiApiKeyState(key);
+    try {
+      if (key) localStorage.setItem('rallycut_gemini_api_key', key);
+      else localStorage.removeItem('rallycut_gemini_api_key');
+    } catch {}
+  }, []);
+
+  const [player1, setPlayer1] = useState<PlayerInfo>(persisted.current?.player1 || SAMPLE_PLAYERS.p1);
+  const [player2, setPlayer2] = useState<PlayerInfo>(persisted.current?.player2 || SAMPLE_PLAYERS.p2);
+  const [branding, setBranding] = useState<ClubBranding>(persisted.current?.branding || SAMPLE_BRANDING);
 
   const [replayState, setReplayState] = useState<ReplayState>({
     isActive: false,
@@ -125,21 +193,61 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     spotlightEnabled: true,
   });
 
-  const [rawRallies, setRawRallies] = useState<RallyInterval[]>(SAMPLE_RALLIES);
+  const [rawRallies, setRawRallies] = useState<RallyInterval[]>(persisted.current?.rawRallies || SAMPLE_RALLIES);
   const [selectedRallyId, setSelectedRallyId] = useState<string | null>(SAMPLE_RALLIES[0]?.id || null);
   const [filterPreset, setFilterPreset] = useState<FilterPreset>('all');
 
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgressCallback | null>(null);
 
-  const [exportSettings, setExportSettings] = useState<ExportSettings>({
-    includeScoreboard: true,
-    aspectRatio: '16:9',
-    quality: '1080p',
-    scoreboardPosition: 'top-left',
-    showStrokeTag: true,
-    filterPreset: 'all',
-  });
+  const [exportSettings, setExportSettings] = useState<ExportSettings>(
+    persisted.current?.exportSettings || {
+      includeScoreboard: true,
+      aspectRatio: '16:9',
+      quality: '1080p',
+      scoreboardPosition: 'top-left',
+      showStrokeTag: true,
+      filterPreset: 'all',
+    }
+  );
+
+  // ============================================================================
+  // Undo/Redo Stack for Rally Edits (#20)
+  // ============================================================================
+  const undoStack = useRef<RallyInterval[][]>([]);
+  const redoStack = useRef<RallyInterval[][]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  const pushUndoState = useCallback(() => {
+    undoStack.current = [...undoStack.current.slice(-29), rawRallies];
+    redoStack.current = [];
+    setCanUndo(true);
+    setCanRedo(false);
+  }, [rawRallies]);
+
+  const undo = useCallback(() => {
+    if (undoStack.current.length === 0) return;
+    const prev = undoStack.current.pop()!;
+    redoStack.current.push(rawRallies);
+    setRawRallies(prev);
+    setCanUndo(undoStack.current.length > 0);
+    setCanRedo(true);
+  }, [rawRallies]);
+
+  const redo = useCallback(() => {
+    if (redoStack.current.length === 0) return;
+    const next = redoStack.current.pop()!;
+    undoStack.current.push(rawRallies);
+    setRawRallies(next);
+    setCanRedo(redoStack.current.length > 0);
+    setCanUndo(true);
+  }, [rawRallies]);
+
+  // Screen setter with toast (#5) - uses window event for toast since context is separate
+  const setActiveScreen = useCallback((screen: ScreenType) => {
+    setActiveScreenRaw(screen);
+  }, []);
 
   // Calculate scores and statistics through ITTF rules
   const { updatedRallies: rallies, analytics } = useMemo(() => {
@@ -181,25 +289,24 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   }, [rallies, filterPreset]);
 
-  // Handle Rallies-Only auto-skip logic:
-  // When playbackMode === 'rallies_only', as soon as playhead hits the end of a rally,
-  // skip immediately to the start of the next included rally!
+  // Handle Rallies-Only auto-skip logic
   useEffect(() => {
     if (!isPlaying || playbackMode !== 'rallies_only' || filteredRallies.length === 0) return;
 
-    // Find if we are currently inside any filtered rally
     const currentActive = filteredRallies.find(
       (r) => currentTime >= r.startTime && currentTime < r.endTime - 0.1,
     );
 
     if (!currentActive) {
-      // Find next rally whose startTime > currentTime
       const nextRally = filteredRallies.find((r) => r.startTime > currentTime);
       if (nextRally) {
-        // Jump forward
+        const skippedGap = Math.max(0, nextRally.startTime - currentTime);
+        if (skippedGap > 0.8) {
+          setDeadTimeNotice(`⚡ Skipped ${skippedGap.toFixed(1)}s dead time → Point #${nextRally.index}`);
+          setTimeout(() => setDeadTimeNotice(null), 2500);
+        }
         setCurrentTime(nextRally.startTime);
       } else {
-        // We reached past all rallies: loop back to first rally or stop
         const first = filteredRallies[0];
         if (first && currentTime > filteredRallies[filteredRallies.length - 1].endTime) {
           setCurrentTime(first.startTime);
@@ -207,6 +314,21 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }
   }, [currentTime, isPlaying, playbackMode, filteredRallies]);
+
+  // Persist state to localStorage (#10)
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      savePersistedState({
+        rawRallies,
+        player1,
+        player2,
+        branding,
+        exportSettings,
+        activeScreen,
+      });
+    }, 500); // debounce saves
+    return () => clearTimeout(timeout);
+  }, [rawRallies, player1, player2, branding, exportSettings, activeScreen]);
 
   // Seek actions
   const seekToTime = useCallback((seconds: number) => {
@@ -222,9 +344,10 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [rallies]);
 
-  // Rally fine-tuning actions
+  // Rally fine-tuning actions (with undo support #20)
   const adjustRallyBoundary = useCallback(
     (rallyId: string, deltaStart: number, deltaEnd: number) => {
+      pushUndoState();
       setRawRallies((prev) =>
         prev.map((r) => {
           if (r.id !== rallyId) return r;
@@ -234,26 +357,40 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }),
       );
     },
-    [],
+    [pushUndoState],
   );
 
   const overrideRallyWinner = useCallback((rallyId: string, winner: 1 | 2) => {
+    pushUndoState();
     setRawRallies((prev) =>
       prev.map((r) => (r.id === rallyId ? { ...r, winner } : r)),
     );
-  }, []);
+  }, [pushUndoState]);
 
   const toggleExcludeRally = useCallback((rallyId: string) => {
+    pushUndoState();
     setRawRallies((prev) =>
       prev.map((r) => (r.id === rallyId ? { ...r, excluded: !r.excluded } : r)),
     );
-  }, []);
+  }, [pushUndoState]);
 
   const updateRally = useCallback((rallyId: string, updates: Partial<RallyInterval>) => {
+    pushUndoState();
     setRawRallies((prev) =>
       prev.map((r) => (r.id === rallyId ? { ...r, ...updates } : r)),
     );
-  }, []);
+  }, [pushUndoState]);
+
+  const moveRally = useCallback((fromIndex: number, toIndex: number) => {
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
+    pushUndoState();
+    setRawRallies((prev) => {
+      const copy = [...prev];
+      const [item] = copy.splice(fromIndex, 1);
+      copy.splice(toIndex, 0, item);
+      return copy.map((r, i) => ({ ...r, index: i + 1 }));
+    });
+  }, [pushUndoState]);
 
   const updatePlayers = useCallback(
     (p1: Partial<PlayerInfo>, p2: Partial<PlayerInfo>) => {
@@ -321,6 +458,12 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setPlayer2(preset.players.p2);
       setBranding(preset.branding);
 
+      // Reset undo stack on new match load
+      undoStack.current = [];
+      redoStack.current = [];
+      setCanUndo(false);
+      setCanRedo(false);
+
       setAnalysisProgress({
         stage: 'ready',
         percent: 100,
@@ -330,12 +473,70 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setTimeout(() => {
         setIsAnalyzing(false);
         setActiveScreen('editor');
+        // Dispatch toast event
+        window.dispatchEvent(new CustomEvent('rallycut-toast', {
+          detail: { type: 'success', message: `${preset.title} loaded successfully! ${SAMPLE_RALLIES.length} rallies detected.` }
+        }));
       }, 400);
     } catch (err) {
       console.error('Failed to load sample match:', err);
       setIsAnalyzing(false);
+      window.dispatchEvent(new CustomEvent('rallycut-toast', {
+        detail: { type: 'error', message: 'Failed to load sample match. Please try again.' }
+      }));
     }
   }, []);
+
+  // Execute AI analysis via backend engine
+  const runAiAnalysis = useCallback(async (fileOverride?: File | null, urlOverride?: string | null) => {
+    setIsAnalyzing(true);
+    const targetFile = fileOverride !== undefined ? fileOverride : videoFile;
+    const targetUrl = urlOverride !== undefined ? urlOverride : videoUrl;
+
+    try {
+      const result = await analyzeVideoWithBackend(
+        targetFile,
+        targetUrl,
+        (prog) => {
+          setAnalysisProgress(prog);
+        },
+        geminiApiKey,
+      );
+
+      if (result.uploadedPath) {
+        setUploadedVideoPath(result.uploadedPath);
+      }
+
+      if (result.rallies && result.rallies.length > 0) {
+        setRawRallies(result.rallies);
+        setSelectedRallyId(result.rallies[0]?.id || null);
+        setCurrentTime(result.rallies[0]?.startTime || 0);
+        if (result.duration) {
+          setVideoDuration(result.duration);
+        }
+        window.dispatchEvent(
+          new CustomEvent('rallycut-toast', {
+            detail: {
+              type: 'ai',
+              message: `AI analysis complete! ${result.rallies.length} competitive rallies mapped, zero dead time.`,
+            },
+          }),
+        );
+      }
+    } catch (err) {
+      console.error('AI analysis error:', err);
+      window.dispatchEvent(
+        new CustomEvent('rallycut-toast', {
+          detail: {
+            type: 'error',
+            message: 'AI analysis failed. Please check your video file and try again.',
+          },
+        }),
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [videoFile, videoUrl, geminiApiKey]);
 
   // Ingestion: Import local video file
   const importVideoFile = useCallback(async (file: File) => {
@@ -354,9 +555,16 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setActiveScreen('editor');
-  }, []);
 
-  // Ingestion: Import and analyze YouTube Match URL with Gemini 3.5 Flash
+    window.dispatchEvent(new CustomEvent('rallycut-toast', {
+      detail: { type: 'success', message: `Video "${file.name}" imported! Starting AI analysis...` }
+    }));
+
+    // Auto-run AI analysis
+    runAiAnalysis(file, url);
+  }, [runAiAnalysis]);
+
+  // Ingestion: Import and analyze YouTube Match URL with Gemini 2.5 Flash
   const importYoutubeUrl = useCallback(async (url: string) => {
     setIsAnalyzing(true);
     setAnalysisProgress({
@@ -365,6 +573,10 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       message: 'Connecting to YouTube oEmbed API...',
     });
 
+    window.dispatchEvent(new CustomEvent('rallycut-toast', {
+      detail: { type: 'info', message: 'YouTube import started. Analyzing with Gemini Flash...' }
+    }));
+
     try {
       const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
       const extractedId = match ? match[1] : '';
@@ -372,13 +584,13 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setAnalysisProgress({
         stage: 'youtube_ai',
         percent: 45,
-        message: 'Dispatching stream to Gemini 3.5 Flash for ITTF action segmentation...',
+        message: 'Dispatching stream to Gemini 2.5 Flash for ITTF action segmentation...',
       });
 
       const response = await fetch('/api/youtube/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, apiKey: geminiApiKey || undefined }),
       });
 
       if (response.ok) {
@@ -420,11 +632,14 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setAnalysisProgress({
                   stage: 'ready',
                   percent: 100,
-                  message: `Gemini 3.5 Flash: Extracted ${res.rallies?.length || 5} rallies from YouTube!`,
+                  message: `Gemini 2.5 Flash: Extracted ${res.rallies?.length || 5} rallies from YouTube!`,
                 });
                 setTimeout(() => {
                   setIsAnalyzing(false);
                   setActiveScreen('editor');
+                  window.dispatchEvent(new CustomEvent('rallycut-toast', {
+                    detail: { type: 'ai', message: `YouTube analysis complete! ${res.rallies?.length || 5} rallies extracted.` }
+                  }));
                 }, 500);
                 return;
               }
@@ -458,30 +673,11 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (err: any) {
       console.warn('YouTube ingestion notice:', err);
       setIsAnalyzing(false);
+      window.dispatchEvent(new CustomEvent('rallycut-toast', {
+        detail: { type: 'error', message: 'YouTube import encountered an issue. Using fallback data.' }
+      }));
     }
-  }, []);
-
-  // Execute AI analysis via backend engine
-  const runAiAnalysis = useCallback(async () => {
-    setIsAnalyzing(true);
-    try {
-      const result = await analyzeVideoWithBackend(videoFile, videoUrl, (prog) => {
-        setAnalysisProgress(prog);
-      });
-      if (result.rallies && result.rallies.length > 0) {
-        setRawRallies(result.rallies);
-        setSelectedRallyId(result.rallies[0]?.id || null);
-        setCurrentTime(result.rallies[0]?.startTime || 0);
-        if (result.duration) {
-          setVideoDuration(result.duration);
-        }
-      }
-    } catch (err) {
-      console.error('AI analysis error:', err);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [videoFile, videoUrl]);
+  }, [geminiApiKey]);
 
   // Initial auto-load: load the real match video so the user sees a rich, populated state on load
   useEffect(() => {
@@ -495,6 +691,7 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActiveScreen,
     videoUrl,
     videoFile,
+    uploadedVideoPath,
     youtubeVideoId,
     youtubeUrl,
     videoDuration,
@@ -502,6 +699,7 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     isPlaying,
     playbackMode,
     playbackSpeed,
+    deadTimeNotice,
     setPlaybackSpeed,
     setVideoDuration,
     setCurrentTime,
@@ -529,14 +727,26 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     overrideRallyWinner,
     toggleExcludeRally,
     updateRally,
+    moveRally,
     isAnalyzing,
     analysisProgress,
+    activePresetId,
+    setActivePresetId,
+    isMatchLoaderOpen,
+    setIsMatchLoaderOpen,
+    geminiApiKey,
+    setGeminiApiKey,
     loadSampleMatch,
     importVideoFile,
     importYoutubeUrl,
     runAiAnalysis,
     exportSettings,
     updateExportSettings,
+    // Undo/Redo (#20)
+    canUndo,
+    canRedo,
+    undo,
+    redo,
   };
 
   return <RallyCutContext.Provider value={value}>{children}</RallyCutContext.Provider>;
