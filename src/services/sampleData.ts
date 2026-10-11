@@ -25,7 +25,7 @@ export const SAMPLE_PLAYERS: { p1: PlayerInfo; p2: PlayerInfo } = {
     name: 'Player 1',
     club: 'Table Tennis Club',
     blade: 'Custom Blade',
-    style: 'Offensive (Loop / Attack)',
+    style: 'Offensive (Loop)',
     color: '#00F5D4',
   },
   p2: {

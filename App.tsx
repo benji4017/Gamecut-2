@@ -9,6 +9,7 @@ import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import { ToastProvider } from './src/components/common/Toast';
 import { useKeyboardShortcuts } from './src/hooks/useKeyboardShortcuts';
 import { GeminiKeyModal } from './src/components/common/GeminiKeyModal';
+import { KeyboardShortcutsModal } from './src/components/common/KeyboardShortcutsModal';
 
 /** Page transition wrapper (#6) */
 const PageTransition: React.FC<{ screen: string; children: React.ReactNode }> = ({ screen, children }) => {
