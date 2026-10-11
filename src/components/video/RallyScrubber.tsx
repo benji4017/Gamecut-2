@@ -30,14 +30,14 @@ export const RallyScrubber: React.FC = () => {
     const percent = (x / rect.width) * 100;
     const time = (percent / 100) * duration;
 
-    // Check if hovering over a rally
+    // Check if hovering over an active rally or dead time
     const match = rallies.find((r) => !r.excluded && time >= r.startTime && time <= r.endTime);
     setHoverInfo({
       percent,
       time,
       rallyTitle: match
-        ? `Rally #${match.index}: ${match.endingStroke.replace('_', ' ')} (${match.shotCount} shots)`
-        : undefined,
+        ? `Point #${match.index} (${match.shotCount} shots)`
+        : 'Dead Time (Auto-cut)',
     });
   };
 
@@ -145,10 +145,18 @@ export const RallyScrubber: React.FC = () => {
             />
             <div
               style={{ left: `${Math.min(92, Math.max(8, hoverInfo.percent))}%` }}
-              className="absolute -top-7 -translate-x-1/2 px-2 py-0.5 bg-slate-950 border border-slate-700 rounded text-[10px] font-mono text-white pointer-events-none shadow-xl whitespace-nowrap z-30"
+              className="absolute -top-8 -translate-x-1/2 px-2.5 py-1 bg-slate-950/95 border border-slate-700/80 rounded-lg text-[10px] font-mono text-white pointer-events-none shadow-2xl whitespace-nowrap z-30 flex items-center gap-1.5 backdrop-blur-md"
             >
-              {formatClockTime(hoverInfo.time)}
-              {hoverInfo.rallyTitle && ` · ${hoverInfo.rallyTitle}`}
+              <span className="font-bold text-[#00F5D4]">{formatClockTime(hoverInfo.time)}</span>
+              <span className="text-slate-500">({hoverInfo.time.toFixed(1)}s)</span>
+              {hoverInfo.rallyTitle && (
+                <>
+                  <span className="text-slate-600">·</span>
+                  <span className={hoverInfo.rallyTitle.includes('Dead Time') ? 'text-slate-400' : 'text-[#CCFF00] font-bold'}>
+                    {hoverInfo.rallyTitle}
+                  </span>
+                </>
+              )}
             </div>
           </>
         )}

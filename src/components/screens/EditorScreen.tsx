@@ -20,6 +20,10 @@ export const EditorScreen: React.FC = () => {
     geminiApiKey,
     setIsKeyModalOpen,
     analyzedBy,
+    cutTightness,
+    applyCutTightness,
+    player1,
+    player2,
   } = useRallyCut();
 
   const activeCount = rallies.filter((r) => !r.excluded).length;
@@ -55,7 +59,32 @@ export const EditorScreen: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Global Cut Buffer / Tightness Control */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+            <span className="text-[10px] text-slate-400 pl-1.5 pr-0.5">Cut Buffer:</span>
+            {(['tight', 'crisp', 'relaxed'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => applyCutTightness(t)}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                  cutTightness === t
+                    ? 'bg-[#00F5D4] text-slate-950 shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title={
+                  t === 'tight'
+                    ? 'Instant 0.0s cut on dead ball'
+                    : t === 'crisp'
+                    ? 'Crisp 0.2s breathing room'
+                    : 'Relaxed 0.4s buffer'
+                }
+              >
+                {t === 'tight' ? 'Instant (0s)' : t === 'crisp' ? 'Crisp (0.2s)' : 'Relaxed (0.4s)'}
+              </button>
+            ))}
+          </div>
+
           {analyzedBy === 'gemini-2.5-flash' ? (
             <span className="text-[10px] font-mono text-[#00F5D4] flex items-center gap-1.5 bg-[#00F5D4]/10 border border-[#00F5D4]/30 px-2 py-1 rounded-lg">
               <span className="w-1.5 h-1.5 rounded-full bg-[#00F5D4] animate-pulse" />

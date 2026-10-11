@@ -103,6 +103,17 @@ interface RallyCutContextType {
   player1: PlayerInfo;
   player2: PlayerInfo;
   updatePlayers: (p1: Partial<PlayerInfo>, p2: Partial<PlayerInfo>) => void;
+  setPlayer1Name: (name: string) => void;
+  setPlayer2Name: (name: string) => void;
+
+  // Cut Tightness Controls
+  cutTightness: 'tight' | 'crisp' | 'relaxed';
+  setCutTightness: (tightness: 'tight' | 'crisp' | 'relaxed') => void;
+  applyCutTightness: (tightness: 'tight' | 'crisp' | 'relaxed') => void;
+
+  // Shortcuts Modal
+  isShortcutsModalOpen: boolean;
+  setIsShortcutsModalOpen: (open: boolean) => void;
 
   // Branding & Replay
   branding: ClubBranding;
@@ -246,6 +257,9 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       filterPreset: 'all',
     }
   );
+
+  const [cutTightness, setCutTightness] = useState<'tight' | 'crisp' | 'relaxed'>('tight');
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState<boolean>(false);
 
   // ============================================================================
   // Undo/Redo Stack for Rally Edits (#20)
@@ -435,6 +449,33 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     },
     [],
   );
+
+  const setPlayer1Name = useCallback((name: string) => {
+    setPlayer1((prev) => ({ ...prev, name }));
+  }, []);
+
+  const setPlayer2Name = useCallback((name: string) => {
+    setPlayer2((prev) => ({ ...prev, name }));
+  }, []);
+
+  const applyCutTightness = useCallback((tightness: 'tight' | 'crisp' | 'relaxed') => {
+    setCutTightness(tightness);
+    const delta = tightness === 'tight' ? -0.2 : tightness === 'crisp' ? 0.0 : 0.3;
+    setRawRallies((prev) =>
+      prev.map((r) => ({
+        ...r,
+        endTime: Math.max(r.startTime + 0.4, Number((r.endTime + delta).toFixed(2))),
+      }))
+    );
+    window.dispatchEvent(
+      new CustomEvent('rallycut-toast', {
+        detail: {
+          type: 'success',
+          message: `Cut timing buffer set to ${tightness.toUpperCase()} mode!`,
+        },
+      })
+    );
+  }, []);
 
   const updateExportSettings = useCallback((settings: Partial<ExportSettings>) => {
     setExportSettings((prev) => ({ ...prev, ...settings }));
@@ -793,6 +834,13 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     player1,
     player2,
     updatePlayers,
+    setPlayer1Name,
+    setPlayer2Name,
+    cutTightness,
+    setCutTightness,
+    applyCutTightness,
+    isShortcutsModalOpen,
+    setIsShortcutsModalOpen,
     branding,
     updateBranding,
     replayState,

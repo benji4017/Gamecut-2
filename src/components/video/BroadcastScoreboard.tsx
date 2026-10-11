@@ -17,12 +17,30 @@ export const BroadcastScoreboard: React.FC<BroadcastScoreboardProps> = ({
     rallies,
     player1,
     player2,
+    setPlayer1Name,
+    setPlayer2Name,
     currentTime,
     branding,
     replayState,
   } = useRallyCut();
 
   const [isMinimized, setIsMinimized] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState<1 | 2 | null>(null);
+  const [editName, setEditName] = useState('');
+
+  const startEdit = (playerNum: 1 | 2, currentName: string) => {
+    setEditingPlayer(playerNum);
+    setEditName(currentName);
+  };
+
+  const saveEdit = () => {
+    if (editingPlayer === 1 && editName.trim()) {
+      setPlayer1Name(editName.trim());
+    } else if (editingPlayer === 2 && editName.trim()) {
+      setPlayer2Name(editName.trim());
+    }
+    setEditingPlayer(null);
+  };
 
   // Find the most recent rally at or before current time if not currently active
   const displayRally =
@@ -76,9 +94,28 @@ export const BroadcastScoreboard: React.FC<BroadcastScoreboardProps> = ({
         {/* Player 1 */}
         <div className="flex items-center gap-1.5">
           <span className="text-sm" title={branding.p1Club.name}>{branding.p1Club.badgeEmoji}</span>
-          <span className="font-bold text-white max-w-[80px] sm:max-w-[100px] truncate">
-            {player1.name.toLowerCase().startsWith('player') ? player1.name : player1.name.split(' ')[0]}
-          </span>
+          {editingPlayer === 1 ? (
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onBlur={saveEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveEdit();
+                if (e.key === 'Escape') setEditingPlayer(null);
+              }}
+              autoFocus
+              className="w-20 px-1 py-0.5 bg-slate-900 border border-[#00F5D4] rounded text-white text-xs font-bold focus:outline-none"
+            />
+          ) : (
+            <button
+              onClick={() => startEdit(1, player1.name)}
+              className="font-bold text-white max-w-[80px] sm:max-w-[100px] truncate hover:text-[#00F5D4] hover:underline transition-colors text-left"
+              title="Click to rename Player 1"
+            >
+              {player1.name.toLowerCase().startsWith('player') ? player1.name : player1.name.split(' ')[0]}
+            </button>
+          )}
           {displayRally.server === 1 && (
             <span className="text-[10px]" title="Serving">🏓</span>
           )}
@@ -96,9 +133,28 @@ export const BroadcastScoreboard: React.FC<BroadcastScoreboardProps> = ({
           {displayRally.server === 2 && (
             <span className="text-[10px]" title="Serving">🏓</span>
           )}
-          <span className="font-bold text-slate-200 max-w-[80px] sm:max-w-[100px] truncate">
-            {player2.name.toLowerCase().startsWith('player') ? player2.name : player2.name.split(' ')[0]}
-          </span>
+          {editingPlayer === 2 ? (
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onBlur={saveEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveEdit();
+                if (e.key === 'Escape') setEditingPlayer(null);
+              }}
+              autoFocus
+              className="w-20 px-1 py-0.5 bg-slate-900 border border-blue-400 rounded text-white text-xs font-bold focus:outline-none"
+            />
+          ) : (
+            <button
+              onClick={() => startEdit(2, player2.name)}
+              className="font-bold text-slate-200 max-w-[80px] sm:max-w-[100px] truncate hover:text-blue-400 hover:underline transition-colors text-left"
+              title="Click to rename Player 2"
+            >
+              {player2.name.toLowerCase().startsWith('player') ? player2.name : player2.name.split(' ')[0]}
+            </button>
+          )}
           <span className="text-sm" title={branding.p2Club.name}>{branding.p2Club.badgeEmoji}</span>
         </div>
 

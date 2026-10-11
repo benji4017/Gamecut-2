@@ -14,6 +14,7 @@ import {
   Zap,
   RotateCcw,
   Sparkles,
+  Keyboard,
 } from 'lucide-react';
 
 export const BeforeAfterPlayer: React.FC = () => {
@@ -40,6 +41,7 @@ export const BeforeAfterPlayer: React.FC = () => {
     triggerReplay,
     exitReplay,
     deadTimeNotice,
+    setIsShortcutsModalOpen,
   } = useRallyCut();
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -372,6 +374,15 @@ export const BeforeAfterPlayer: React.FC = () => {
           >
             <span className={`w-1.5 h-1.5 rounded-full ${showAiHud ? 'bg-[#00F5D4] animate-pulse' : 'bg-slate-600'}`} />
             <span>HUD: {showAiHud ? 'ON' : 'OFF'}</span>
+          </button>
+
+          <button
+            onClick={() => setIsShortcutsModalOpen(true)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-950/60 text-slate-400 border border-slate-800 hover:text-white hover:border-slate-700 transition-all shadow-sm"
+            title="View Pro Editor Keyboard Shortcuts (?)"
+          >
+            <Keyboard className="w-3.5 h-3.5 text-[#00F5D4]" />
+            <span className="hidden sm:inline">Keys</span>
           </button>
         </div>
 
