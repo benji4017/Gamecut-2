@@ -1,0 +1,9 @@
+{
+  "name": "RallyCut - AI Table Tennis Highlights & Analyzer",
+  "description": "Automatically detect table tennis rally boundaries, eliminate dead time, calculate ITTF match scores, and export broadcast highlight reels.",
+  "requestFramePermissions": [],
+  "prompt": "",
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
