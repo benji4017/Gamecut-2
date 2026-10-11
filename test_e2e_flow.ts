@@ -86,12 +86,12 @@ async function runTests() {
     assert(res.status === 200, 'Analyze endpoint returns HTTP 200');
     assert(data.success === true && !!data.jobId, `Analysis job created: ${data.jobId}`);
 
-    // Poll job completion
+    // Poll job completion (allow adequate time for cloud upload & processing)
     let attempts = 0;
     let jobData: any = null;
-    while (attempts < 20) {
+    while (attempts < 120) {
       attempts++;
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 600));
       const jobRes = await fetch(`${BASE_URL}/api/jobs/${data.jobId}`);
       jobData = await jobRes.json();
       if (jobData.status === 'completed' || jobData.status === 'failed') break;

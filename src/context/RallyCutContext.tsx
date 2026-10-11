@@ -187,6 +187,21 @@ export const RallyCutProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch {}
   }, []);
 
+  // Sync server-configured Gemini API key if client has none
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then((cfg) => {
+        if (cfg.apiKey && !geminiApiKey) {
+          setGeminiApiKeyState(cfg.apiKey);
+          try {
+            localStorage.setItem('rallycut_gemini_api_key', cfg.apiKey);
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, [geminiApiKey]);
+
   const [player1, setPlayer1] = useState<PlayerInfo>(persisted.current?.player1 || SAMPLE_PLAYERS.p1);
   const [player2, setPlayer2] = useState<PlayerInfo>(persisted.current?.player2 || SAMPLE_PLAYERS.p2);
   const [branding, setBranding] = useState<ClubBranding>(persisted.current?.branding || SAMPLE_BRANDING);

@@ -16,6 +16,30 @@ const FFPROBE_BIN = process.env.FFPROBE_PATH || (ffprobeInstaller && ffprobeInst
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Automatically load local .env if present
+const envPath = path.resolve(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  try {
+    if (typeof (process as any).loadEnvFile === 'function') {
+      (process as any).loadEnvFile(envPath);
+    } else {
+      const content = fs.readFileSync(envPath, 'utf-8');
+      for (const line of content.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+          const [key, ...vals] = trimmed.split('=');
+          const val = vals.join('=').trim();
+          if (key && !process.env[key.trim()]) {
+            process.env[key.trim()] = val.replace(/^["']|["']$/g, '');
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Notice loading .env file:', err);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
@@ -190,6 +214,15 @@ app.get('/api/health', async (_req: Request, res: Response) => {
       serverSideGemini: Boolean(process.env.GEMINI_API_KEY || process.env.API_KEY),
     },
     activeJobs: jobs.size,
+  });
+});
+
+// Configuration info endpoint
+app.get('/api/config', (_req: Request, res: Response) => {
+  const envKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+  res.json({
+    geminiApiKeyConfigured: !!envKey,
+    apiKey: envKey,
   });
 });
 
@@ -479,12 +512,12 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
 
             if (fileState.state === 'ACTIVE') {
               job.progress = 75;
-              job.message = 'Gemini 2.5 Flash: tracking ball toss, table bounces & ITTF rallies...';
+              job.message = 'Gemini 3.8 Flash: tracking ball toss, table bounces & ITTF rallies...';
               job.updatedAt = Date.now();
 
-              // Try gemini-2.5-flash with fallback to gemini-2.0-flash
+              // Try gemini-3.8-flash with fallback to gemini-2.5-flash / gemini-2.0-flash
               let response: any = null;
-              for (const modelName of ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
+              for (const modelName of ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
                 try {
                   response = await ai.models.generateContent({
                     model: modelName,
@@ -537,11 +570,11 @@ app.post('/api/analyze', upload.single('video'), async (req: Request, res: Respo
               if (validatedRallies.length > 0) {
                 job.status = 'completed';
                 job.progress = 100;
-                job.message = `Extracted ${validatedRallies.length} verified ITTF rallies with Gemini 2.5 Flash Vision!`;
+                job.message = `Extracted ${validatedRallies.length} verified ITTF rallies with Gemini 3.8 Flash Vision!`;
                 job.result = {
                   rallies: validatedRallies,
                   duration: videoMeta.duration,
-                  analyzedBy: 'gemini-2.5-flash',
+                  analyzedBy: 'gemini-3.8-flash',
                   uploadedPath: (videoPath && videoPath.startsWith('/uploads/')) ? videoPath : undefined,
                 };
                 job.updatedAt = Date.now();
@@ -825,7 +858,7 @@ For each rally provide:
 10. notes (concise tactical summary)`;
 
           let response: any = null;
-          for (const modelName of ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
+          for (const modelName of ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
             try {
               response = await ai.models.generateContent({
                 model: modelName,
