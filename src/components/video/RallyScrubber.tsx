@@ -115,9 +115,8 @@ export const RallyScrubber: React.FC = () => {
                 seekToRally(rally.id);
               }}
               style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-              className={`absolute top-0 bottom-0 transition-opacity ${bgClass} ${
-                isFiltered ? 'opacity-90' : 'opacity-25'
-              } ${isActive ? 'ring-2 ring-white ring-inset shadow-lg' : 'hover:brightness-125'}`}
+              className={`absolute top-0 bottom-0 transition-opacity ${bgClass} ${isFiltered ? 'opacity-90' : 'opacity-25'
+                } ${isActive ? 'ring-2 ring-white ring-inset shadow-lg' : 'hover:brightness-125'}`}
               title={`Rally #${rally.index}: ${rally.shotCount} shots`}
             >
               {/* Rally index label inside block if wide enough */}
